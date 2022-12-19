@@ -68,6 +68,38 @@ public:
 	typedef typename traits_type::difference_type	difference_type;
 	typedef typename traits_type::pointer			pointer;
 	typedef typename traits_type::reference			reference;
+
+	// member functions
+	reverse_iterator() : _current() {}
+	explicit reverse_iterator(iterator_type x) : _current(x) {}
+	template< class U >
+	reverse_iterator(const reverse_iterator<U>& other) : _current(other.base()) {}
+
+	template< class U >
+	reverse_iterator& operator=(const ft::reverse_iterator<U>& other) {
+		_current = other.base();
+		return *this;
+	}
+
+	virtual ~reverse_iterator() {} // ?
+
+	iterator_type base() const { return _current };
+	reference operator*() const {Iter tmp = _current; return *--tmp;}
+	pointer operator->() const { return &(operator*()); };
+
+	reference operator[](difference_type n) const { return *(*this + n)};
+
+	reverse_iterator& operator++() {--_current; return *this;}
+	reverse_iterator& operator--() {++_current; return *this;}
+	reverse_iterator operator++( int ) {reverse_iterator __tmp = *this; --_current; return __tmp;}
+	reverse_iterator operator--( int ) {reverse_iterator __tmp = *this; ++_current; return __tmp;}
+	reverse_iterator operator+( difference_type n ) const {return reverse_iterator(_current - n);}
+	reverse_iterator operator-( difference_type n ) const {return reverse_iterator(_current + n);}
+	reverse_iterator& operator+=( difference_type n ) {_current -= n; return *this;}
+	reverse_iterator& operator-=( difference_type n ) {_current += n; return *this;}
+
+	// no member functions
+	
 };
 
 
