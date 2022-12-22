@@ -31,14 +31,14 @@ public:
 
 	// constructor
 
-	vector( ) : first(NULL), last(NULL), reserved_last(NULL), alloc(allocator_type()) {}
-	vector(const allocator_type &alloc) : first(NULL), last(NULL), reserved_last(NULL), alloc(alloc) {}
+	vector( ) : _first(NULL), _last(NULL), _reserved_last(NULL), _alloc(allocator_type()) {}
+	vector(const allocator_type &alloc) : _first(NULL), _last(NULL), _reserved_last(NULL), _alloc(alloc) {}
 	explicit vector(size_type size, const T& value = T(), const Allocator& alloc = Allocator())
-		 : first(NULL), last(NULL), reserved_last(NULL), alloc(alloc) {resize(size, value);}
+		 : _first(NULL), _last(NULL), _reserved_last(NULL), _alloc(alloc) {resize(size, value);}
 	
 	template <typename InputIterator>
 	vector(InputIterator first, InputIterator last, const Allocator &alloc = Allocator(), typename ft::enable_if<!ft::is_integral<InputIterator>::value, InputIterator>::type* = NULL)
-		 : first(NULL), last(NULL), reserved_last(NULL), alloc(alloc)
+		 : _first(NULL), _last(NULL), _reserved_last(NULL), _alloc(alloc)
 	{
 		reserve(std::distance(first, last));
 		for (pointer i = first; i != last; ++i)
@@ -47,12 +47,12 @@ public:
 
 	// copy
 
-	vector(const vector &r) : first(NULL), last(NULL), reserved_last(NULL), alloc(r.alloc) {
+	vector(const vector &r) : _first(NULL), _last(NULL), _reserved_last(NULL), _alloc(r.alloc) {
 		reserve(r.size());
-		pointer dest = first;
-		for (const_iterator src = r.begin(), last = r.end(); src != last; ++dest, ++src)
+		pointer dest = _first;
+		for (const_iterator src = r.begin(), _last = r.end(); src != _last; ++dest, ++src)
 			construct(dest, *src);
-		last = first + r.size();
+		_last = _first + r.size();
 	}
 
 	// destructor
@@ -70,24 +70,58 @@ public:
 		else {
 			if (capacity() >= r.size()) {
 				std::copy(r.begin(), r.begin() + r.size(), begin()); //?
-				for (const_iterator src_iter = r.begin() + r.size(), src_end = r.end(); src_iter != src_end; ++src_iter, ++last)
-					construct(last, *src_iter);
+				for (const_iterator src_iter = r.begin() + r.size(), src_end = r.end(); src_iter != src_end; ++src_iter, ++_last)
+					construct(_last, *src_iter);
 			}
 			else {
 				destroy_until(rbegin()); //?
 				reserve(r.size());
-				for (const_iterator src_iter = r.begin(), src_end = r.end(), dest_iter = begin(); src_iter != src_end; ++src_iter, ++dest_iter, ++last)
+				for (const_iterator src_iter = r.begin(), src_end = r.end(), dest_iter = begin(); src_iter != src_end; ++src_iter, ++dest_iter, ++_last)
 					construct(dest_iter, *src_iter);
 			}
 		}
 		return *this;
 	}
 
+	void assign( size_type count, const T& value ) {
+		if (count > capacity()) {
+			clear();
+			reserve(count);
+			std::uninitialized_fill_n(_first, count, value);
+		} else {
+			size_type sz = size();
+			if (count < sz)
+				destroy_until(rbegin() + (sz - count));
+			std::fill_n(_first, count, value);
+		}
+		_last = _first + count;
+	}
+
+	template< class InputIt >
+	void assign(InputIt first, InputIt last,
+				typename ft::enable_if<!ft::is_integral<InputIt>::value, InputIt>::type* = NULL) {
+		size_type new_size = static_cast<size_type>(std::distance(first, last));
+		if (new_size > capacity())
+		{
+			clear();
+			reserve(new_size);
+			std::uninitialized_copy(first, last, _first);
+		}
+		else
+		{
+			size_type sz = size();
+			if (new_size < sz)
+				destroy_until(rbegin() + (sz - new_size));
+			std::uninitialized_copy(first, last, _first);
+		}
+		_last = _first + new_size;
+	}
+
 	// Capacity
 
 	size_type size() const { return end() - begin(); }
 	bool empty() const { return begin() == end(); }
-	size_type capacity() const { return reserved_last - first; }
+	size_type capacity() const { return _reserved_last - _first; }
 
 	// Modifiers
 
@@ -100,44 +134,44 @@ public:
 				c *= 2;
 			reserve(c);
 		}
-		construct(last, value);
-		++last;
+		construct(_last, value);
+		++_last;
 	}
 
 	// Element access
 
-	reference operator[](size_type i) { return first[i]; }
-	const_reference operator[](size_type i) const { return first[i]; }
+	reference operator[](size_type i) { return _first[i]; }
+	const_reference operator[](size_type i) const { return _first[i]; }
 
 	reference at(size_type i) {
 		if (i >= size())
 			throw std::out_of_range("index is out of range.");
-		return first[i];
+		return _first[i];
 	}
 	const_reference at(size_type i) const {
 		if (i >= size())
 			throw std::out_of_range("index is out of range.");
-		return first[i];
+		return _first[i];
 	}
 
-	reference front() { return *first; }
-	const_reference front() const { return *first; }
-	reference back() { return *(last - 1); }
-	const_reference back() const { return *(last - 1); }
+	reference front() { return *_first; }
+	const_reference front() const { return *_first; }
+	reference back() { return *(_last - 1); }
+	const_reference back() const { return *(_last - 1); }
 
-	pointer data() { return first; }
-	const_pointer data() const { return first; }
+	pointer data() { return _first; }
+	const_pointer data() const { return _first; }
 
 	// Iterators
 
-	iterator begin() { return first; };
-	iterator end() { return last; };
-	const_iterator begin() const { return first; };
-	const_iterator end() const { return last; };
-	reverse_iterator rbegin() { return reverse_iterator(last); }
-	reverse_iterator rend() { return reverse_iterator(first); }
-	const_reverse_iterator rbegin() const { return reverse_iterator(last); }
-	const_reverse_iterator rend() const { return reverse_iterator(first); }
+	iterator begin() { return _first; };
+	iterator end() { return _last; };
+	const_iterator begin() const { return _first; };
+	const_iterator end() const { return _last; };
+	reverse_iterator rbegin() { return reverse_iterator(_last); }
+	reverse_iterator rend() { return reverse_iterator(_first); }
+	const_reverse_iterator rbegin() const { return reverse_iterator(_last); }
+	const_reverse_iterator rend() const { return reverse_iterator(_first); }
 	
 	// Modifiers2
 
@@ -150,20 +184,20 @@ public:
 			return ;
 		pointer ptr = allocate(sz);
 
-		pointer old_first = first;
-		pointer old_last = last;
+		pointer old_first = _first;
+		pointer old_last = _last;
 		size_type old_capacity = capacity();
 
-		first = ptr;
-		last = first;
-		reserved_last = first + sz;
+		_first = ptr;
+		_last = _first;
+		_reserved_last = _first + sz;
 
-		for (pointer old_iter = old_first; old_iter != old_last; ++old_iter, ++last)
-			construct(last, std::move(*old_iter));
+		for (pointer old_iter = old_first; old_iter != old_last; ++old_iter, ++_last)
+			construct(_last, std::move(*old_iter));
 		
 		for (reverse_iterator riter = reverse_iterator(old_last), rend = reverse_iterator(old_first); riter != rend; ++riter)
 			destroy(&*riter);
-		alloc.deallocate(old_first, old_capacity);
+		_alloc.deallocate(old_first, old_capacity);
 	}
 
 	// Modifiers3
@@ -172,39 +206,39 @@ public:
 		if (sz < size()) {
 			difference_type diff = size() - sz;
 			destroy_until(rbegin() + diff);
-			last = first + sz;
+			_last = _first + sz;
 		} else if (sz > size()) {
 			reserve(sz);
-			for (; last != reserved_last; ++last)
-				construct(last);
+			for (; _last != _reserved_last; ++_last)
+				construct(_last);
 		}
 	}
 	void resize(size_type sz, const_reference value) {
 		if (sz < size()) {
 			difference_type diff = size() - sz;
 			destroy_until(rbegin() + diff);
-			last = first + sz;
+			_last = _first + sz;
 		} else if (sz > size()) {
 			reserve(sz);
-			for (; last != reserved_last; ++last)
-				construct(last, value);
+			for (; _last != _reserved_last; ++_last)
+				construct(_last, value);
 		}
 	}
 
 private:
-	pointer first;
-	pointer last;
-	pointer reserved_last;
-	allocator_type alloc;
+	pointer _first;
+	pointer _last;
+	pointer _reserved_last;
+	allocator_type _alloc;
 
-	pointer allocate(size_type n) { return alloc.allocate(n); }
-	void deallocate() { alloc.deallocate(first, capacity()); }
+	pointer allocate(size_type n) { return _alloc.allocate(n); }
+	void deallocate() { _alloc.deallocate(_first, capacity()); }
 
-	void construct(pointer ptr) { alloc.construct(ptr, 0); }
-	void construct(pointer ptr, const_reference value) { alloc.construct(ptr, value); }
-	void destroy(pointer ptr) { alloc.destroy(ptr); }
+	void construct(pointer ptr) { _alloc.construct(ptr, 0); }
+	void construct(pointer ptr, const_reference value) { _alloc.construct(ptr, value); }
+	void destroy(pointer ptr) { _alloc.destroy(ptr); }
 	void destroy_until(reverse_iterator rend) {
-		for (reverse_iterator riter = rbegin(); riter != rend; ++riter, --last)
+		for (reverse_iterator riter = rbegin(); riter != rend; ++riter, --_last)
 			destroy(&*riter);
 	}
 };
