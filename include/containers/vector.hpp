@@ -7,6 +7,7 @@
 #include <iterator.hpp>
 #include <wrap_iter.hpp>
 #include <reverse_iterator.hpp>
+#include <type_traits.hpp>
 
 namespace ft {
 
@@ -23,8 +24,8 @@ public:
 	typedef std::size_t			size_type;
 	typedef std::ptrdiff_t		difference_type;
 
-	typedef pointer	iterator;
-	typedef const_pointer const_iterator;
+	typedef ft::wrap_iter<value_type>	iterator;
+	typedef ft::wrap_iter<const value_type> const_iterator;
 	typedef ft::reverse_iterator<iterator> reverse_iterator;
 	typedef ft::reverse_iterator<const_iterator> const_reverse_iterator;
 
@@ -46,9 +47,10 @@ public:
 
 	// copy
 
-	vector( const vector &r) : first(NULL), last(NULL), reserved_last(NULL), alloc(r.alloc) {
+	vector(const vector &r) : first(NULL), last(NULL), reserved_last(NULL), alloc(r.alloc) {
 		reserve(r.size());
-		for (pointer dest = first, src = r.begin(), last = r.end(); src != last; ++dest, ++src)
+		pointer dest = first;
+		for (const_iterator src = r.begin(), last = r.end(); src != last; ++dest, ++src)
 			construct(dest, *src);
 		last = first + r.size();
 	}
