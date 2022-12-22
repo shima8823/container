@@ -117,11 +117,18 @@ public:
 		_last = _first + new_size;
 	}
 
+	allocator_type get_allocator() const { return _alloc; }
+
 	// Capacity
 
 	size_type size() const { return end() - begin(); }
 	bool empty() const { return begin() == end(); }
 	size_type capacity() const { return _reserved_last - _first; }
+
+	size_type max_size() const {
+		return std::min<size_type>(_alloc.max_size(),
+				std::numeric_limits<difference_type>::max());
+	}
 
 	// Modifiers
 
@@ -193,7 +200,7 @@ public:
 		_reserved_last = _first + sz;
 
 		for (pointer old_iter = old_first; old_iter != old_last; ++old_iter, ++_last)
-			construct(_last, std::move(*old_iter));
+			construct(_last, *old_iter);
 		
 		for (reverse_iterator riter = reverse_iterator(old_last), rend = reverse_iterator(old_first); riter != rend; ++riter)
 			destroy(&*riter);
@@ -225,6 +232,61 @@ public:
 		}
 	}
 
+	iterator insert( const_iterator pos, const T& value ){
+		difference_type offset = pos - begin();
+		insert(pos, 1, value);
+		return begin() + offset;
+	}
+	void insert( const_iterator pos, size_type count, const T& value ) {
+		if (count == 0) return;
+		difference_type	offset = pos - begin();
+		size_type		new_size = size() + count;
+
+		if (new_size > capacity())
+			reserve(recommend(new_size));
+		iterator new_pos = begin() + offset;
+		while (new_size < size())
+			construct(_last++);
+		std::copy_backward(new_pos, _last - count, _last);
+		std::fill(new_pos, new_pos + count, value);
+	}
+	template< class InputIt >
+	void insert( const_iterator pos, InputIt first, InputIt last ){
+
+	}
+
+	iterator erase( iterator pos ) {
+		return erase(pos, pos + 1);
+	}
+	iterator erase( iterator first, iterator last ) {
+		difference_type erase_size = std::distance(first, last);
+		if (first != last) {
+			if (last != end())
+				std::copy(last, end(), first);
+			destroy_until(rbegin() + erase_size);
+		}
+		return first; //last?
+	}
+
+	void pop_back() {destroy_until(rbegin() + 1);}
+
+	void swap( vector& other ) {
+		pointer tmp_first = other._first;
+		pointer tmp_last = other._last;
+		pointer tmp_reserved_last = other._reserved_last;
+		allocator_type tmp_alloc = other._alloc;
+
+		other._first = this->_first;
+		other._last = this->_last;
+		other._reserved_last = this->_reserved_last;
+		other._alloc = this->_alloc;
+
+		this->_first = tmp_first;
+		this->_last = tmp_last;
+		this->_reserved_last = tmp_reserved_last;
+		this->_alloc = tmp_alloc;
+	}
+
 private:
 	pointer _first;
 	pointer _last;
@@ -241,7 +303,71 @@ private:
 		for (reverse_iterator riter = rbegin(); riter != rend; ++riter, --_last)
 			destroy(&*riter);
 	}
+
+	size_type recommend(size_type new_size) const {
+		const size_type ms = max_size();
+		if (new_size > ms)
+			throw std::length_error("too long size");
+		const size_type cap = capacity();
+		if (cap >= ms / 2)
+			return ms;
+		return std::max<size_type>(2 * cap, new_size);
+	}
 };
+
+template< class T, class Alloc >
+bool operator==( const std::vector<T,Alloc>& lhs,
+                 const std::vector<T,Alloc>& rhs )
+{
+	return lhs.size() == rhs.size() && ft::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+
+template< class T, class Alloc >
+bool operator!=( const std::vector<T,Alloc>& lhs,
+                 const std::vector<T,Alloc>& rhs )
+{
+	return !(lhs == rhs);
+}
+
+template< class T, class Alloc >
+bool operator<( const std::vector<T,Alloc>& lhs,
+                const std::vector<T,Alloc>& rhs )
+{
+	return ft::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+}
+
+template< class T, class Alloc >
+bool operator<=( const std::vector<T,Alloc>& lhs,
+                 const std::vector<T,Alloc>& rhs )
+{
+	return !(rhs < lhs);
+}
+
+template< class T, class Alloc >
+bool operator>( const std::vector<T,Alloc>& lhs,
+                const std::vector<T,Alloc>& rhs )
+{
+	return rhs < lhs;
+}
+
+template< class T, class Alloc >
+bool operator>=( const std::vector<T,Alloc>& lhs,
+                 const std::vector<T,Alloc>& rhs )
+{
+	return !(lhs < rhs);
+}
+
 } // namespace ft
+
+namespace std
+{
+
+template< class T, class Alloc >
+void swap( ft::vector<T,Alloc>& lhs, ft::vector<T,Alloc>& rhs ) {
+	lhs.swap(rhs);
+}
+
+} // namespace std
+
 
 #endif
