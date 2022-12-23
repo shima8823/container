@@ -1,10 +1,11 @@
 CXX = c++
-CXXFLAGS = -std=c++98 -Wall -Wextra -Werror -pedantic-errors -MMD -MP
-CPPFLAGS = -Iinclude
+CXXFLAGS = -std=c++98
+# CXXFLAGS = -std=c++98 -Wall -Wextra -Werror -pedantic-errors -MMD -MP
+CPPFLAGS = -Iinclude/containers -Iinclude/utils
 NAME = container
 
-SRCS = main.cpp
-VPATH = src
+SRCS = main.cpp test_vector.cpp utils.cpp
+VPATH = test
 
 OBJSDIR = obj
 OBJS = $(addprefix $(OBJSDIR)/, $(SRCS:%.cpp=%.o))
