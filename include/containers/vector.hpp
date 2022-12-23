@@ -251,8 +251,19 @@ public:
 		std::fill(new_pos, new_pos + count, value);
 	}
 	template< class InputIt >
-	void insert( const_iterator pos, InputIt first, InputIt last ){
-
+	typename ft::enable_if<!ft::is_integral<InputIt>::value, void>::type
+	insert( const_iterator pos, InputIt first, InputIt last ){
+		difference_type count = std::distance(first, last);
+		if (count == 0) return;
+		difference_type	offset = pos - begin();
+		size_type		new_size = size() + count;
+		if (new_size > capacity())
+			reserve(recommend(new_size));
+		iterator new_pos = begin() + offset;
+		while (new_size < size())
+			construct(_last++);
+		std::copy_backward(new_pos, _last - count, _last);
+		std::copy(first, last, new_pos);
 	}
 
 	iterator erase( iterator pos ) {
