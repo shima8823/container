@@ -15,19 +15,19 @@ template < typename T, typename Allocator = std::allocator<T> >
 class vector
 {
 public:
-	typedef T					value_type;
-	typedef T*					pointer;
-	typedef const pointer		const_pointer;
-	typedef value_type&			reference;
-	typedef const value_type&	const_reference;
-	typedef Allocator			allocator_type;
-	typedef std::size_t			size_type;
-	typedef std::ptrdiff_t		difference_type;
+	typedef T										value_type;
+	typedef Allocator								allocator_type;
+	typedef typename allocator_type::pointer		pointer;
+	typedef typename allocator_type::const_pointer	const_pointer;
+	typedef value_type&								reference;
+	typedef const value_type&						const_reference;
+	typedef std::size_t								size_type;
+	typedef std::ptrdiff_t							difference_type;
 
-	typedef ft::wrap_iter<value_type>	iterator;
-	typedef ft::wrap_iter<const value_type> const_iterator;
-	typedef ft::reverse_iterator<iterator> reverse_iterator;
-	typedef ft::reverse_iterator<const_iterator> const_reverse_iterator;
+	typedef ft::wrap_iter<pointer>					iterator;
+	typedef ft::wrap_iter<const_pointer>			const_iterator;
+	typedef ft::reverse_iterator<iterator>			reverse_iterator;
+	typedef ft::reverse_iterator<const_iterator>	const_reverse_iterator;
 
 	// constructor
 
@@ -171,12 +171,12 @@ public:
 
 	// Iterators
 
-	iterator begin() { return _first; };
-	iterator end() { return _last; };
-	const_iterator begin() const { return _first; };
-	const_iterator end() const { return _last; };
-	reverse_iterator rbegin() { return reverse_iterator(_last); }
-	reverse_iterator rend() { return reverse_iterator(_first); }
+	iterator begin() { return iterator(_first); };
+	iterator end() { return iterator(_last); };
+	const_iterator begin() const { return const_iterator(_first); };
+	const_iterator end() const { return const_iterator(_last); };
+	reverse_iterator rbegin() { return reverse_iterator(end()); }
+	reverse_iterator rend() { return reverse_iterator(begin()); }
 	const_reverse_iterator rbegin() const { return reverse_iterator(_last); }
 	const_reverse_iterator rend() const { return reverse_iterator(_first); }
 	
@@ -202,7 +202,7 @@ public:
 		for (pointer old_iter = old_first; old_iter != old_last; ++old_iter, ++_last)
 			construct(_last, *old_iter);
 		
-		for (reverse_iterator riter = reverse_iterator(old_last), rend = reverse_iterator(old_first); riter != rend; ++riter)
+		for (pointer riter = old_last, rend = old_first; riter != rend; ++riter)
 			destroy(&*riter);
 		_alloc.deallocate(old_first, old_capacity);
 	}
