@@ -65,23 +65,8 @@ public:
 	}
 	
 	vector &operator=(const vector &r) {
-		if (this == &r)
-			return *this;
-		if (size() == r.size())
-			std::copy(r.begin(), r.end(), begin());
-		else {
-			if (capacity() >= r.size()) {
-				std::copy(r.begin(), r.begin() + r.size(), begin()); //?
-				for (const_iterator src_iter = r.begin() + r.size(), src_end = r.end(); src_iter != src_end; ++src_iter, ++_last)
-					construct(_last, *src_iter);
-			}
-			else {
-				destroy_until(rbegin()); //?
-				reserve(r.size());
-				for (const_iterator src_iter = r.begin(), src_end = r.end(), dest_iter = begin(); src_iter != src_end; ++src_iter, ++dest_iter, ++_last)
-					construct(dest_iter, *src_iter);
-			}
-		}
+		if (this == &r) return *this;
+		assign(r.begin(), r.end());
 		return *this;
 	}
 
@@ -179,8 +164,8 @@ public:
 	const_iterator end() const { return const_iterator(_last); };
 	reverse_iterator rbegin() { return reverse_iterator(end()); }
 	reverse_iterator rend() { return reverse_iterator(begin()); }
-	const_reverse_iterator rbegin() const { return reverse_iterator(_last); }
-	const_reverse_iterator rend() const { return reverse_iterator(_first); }
+	const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
+	const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
 	
 	// Modifiers2
 
@@ -204,7 +189,10 @@ public:
 		for (pointer old_iter = old_first; old_iter != old_last; ++old_iter, ++_last)
 			construct(_last, *old_iter);
 		
-		for (pointer riter = old_last, rend = old_first; riter != rend; ++riter)
+		for (reverse_iterator riter = reverse_iterator((wrap_iter<pointer>)old_last),
+							  rend = reverse_iterator((wrap_iter<pointer>)old_first);
+							  riter != rend;
+							  ++riter)
 			destroy(&*riter);
 		_alloc.deallocate(old_first, old_capacity);
 	}
