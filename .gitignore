@@ -1,5 +1,9 @@
 .DS_Store
 .vscode
-obj
-container
+obj_ft
+obj_stl
+ft_container
+stl_container
 playground
+ft_result.txt
+stl_result.txt
