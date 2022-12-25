@@ -1,16 +1,53 @@
 #include "tester.hpp"
 #include <vector>
 
-static void constructTest() {
-	int_vector v;
-	// std::vector<int> v;
-	v.push_back(19);
-	printVector(v);
+__attribute__((destructor))
+static void d() {
+	std::cout << "===== leaks =====" << std::endl;
+	system("leaks -q container");
 }
 
-static void copy_constructTest() {
+// (1)なのの数字はcppreferenceの関数番号に対応している
+
+static void constructorTest() {
+	printTitle("constructor");
+	{
+		printTitle("(1)");
+		int_vector v;
+		v.push_back(42);
+		printVector(v);
+	}
+	{
+		printTitle("(2)");
+		std::allocator<int> alloc;
+		int_vector v(alloc);
+		v.push_back(42);
+		printVector(v);
+	}
+	{
+		printTitle("(3)");
+		std::allocator<int> alloc;
+		int_vector v(20, 42, alloc);
+		printVector(v);
+	}
+	{
+		printTitle("(5)");
+		std::allocator<int> alloc;
+		int_vector inputVector(40, 21);
+		int_vector v(inputVector.begin(), inputVector.end());
+		int_vector v_alloc(inputVector.begin(), inputVector.end(), alloc);
+		printVector(v);
+		printVector(v_alloc);
+	}
+	{
+		printTitle("(6)");
+		int_vector inputVector(40, 21);
+		int_vector v(inputVector);
+		printVector(v);
+	}
 
 }
+
 
 static void assignTest() {
 
@@ -93,8 +130,7 @@ static void nonmember_swapTest() {
 }
 
 void vectorTest() {
-	constructTest();
-	copy_constructTest();
+	constructorTest();
 	assignTest();
 	atTest();
 	operator_daikakkoTest();

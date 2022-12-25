@@ -2,12 +2,18 @@
 #define TESTER_HPP
 
 #include <iostream>
-#include <vector.hpp>
+
+#if ISSTD
+	#include <vector>
+	namespace ft = std;
+#else
+	#include <vector.hpp>
+#endif
 
 typedef ft::vector<int> int_vector;
 
 // utils.cpp
-void printTitle(std::string& s);
+void printTitle(std::string s);
 
 template<class T>
 void printVector(T& v) {
