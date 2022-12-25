@@ -1,6 +1,5 @@
 CXX = c++
-CXXFLAGS = -std=c++98
-# CXXFLAGS = -std=c++98 -Wall -Wextra -Werror -pedantic-errors -MMD -MP
+CXXFLAGS = -std=c++98 -Wall -Wextra -Werror -pedantic-errors -MMD -MP
 CPPFLAGS = -Iinclude/containers -Iinclude/utils
 NAME = container
 
@@ -10,6 +9,10 @@ VPATH = test
 OBJSDIR = obj
 OBJS = $(addprefix $(OBJSDIR)/, $(SRCS:%.cpp=%.o))
 DEPENDS = $(OBJS:.o=.d)
+
+ifdef ISSTD
+CPPFLAGS += -D ISSTD=1
+endif
 
 all: $(OBJSDIR) $(NAME)
 
@@ -29,6 +32,9 @@ fclean: clean
 	$(RM) $(NAME)
 
 re: fclean all
+
+std:
+	@make ISSTD=1
 
 -include $(DEPENDS)
 

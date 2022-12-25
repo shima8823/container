@@ -1,13 +1,14 @@
 #ifndef VECTOR_HPP
 #define VECTOR_HPP
 
-#include <iostream>
-
 #include <algorithm.hpp>
 #include <iterator.hpp>
 #include <wrap_iter.hpp>
 #include <reverse_iterator.hpp>
 #include <type_traits.hpp>
+
+#include <iostream>
+#include <iterator> // std::distance
 
 namespace ft {
 
@@ -36,18 +37,19 @@ public:
 	explicit vector(size_type size, const T& value = T(), const Allocator& alloc = Allocator())
 		 : _first(NULL), _last(NULL), _reserved_last(NULL), _alloc(alloc) {resize(size, value);}
 	
-	template <typename InputIterator>
-	vector(InputIterator first, InputIterator last, const Allocator &alloc = Allocator(), typename ft::enable_if<!ft::is_integral<InputIterator>::value, InputIterator>::type* = NULL)
+	template <class InputIterator>
+	vector(InputIterator first, InputIterator last, const Allocator &alloc = Allocator(),
+			typename ft::enable_if<!ft::is_integral<InputIterator>::value, InputIterator>::type* = NULL)
 		 : _first(NULL), _last(NULL), _reserved_last(NULL), _alloc(alloc)
 	{
 		reserve(std::distance(first, last));
-		for (pointer i = first; i != last; ++i)
+		for (InputIterator i = first; i != last; ++i)
 			push_back(*i);
 	}
 
 	// copy
 
-	vector(const vector &r) : _first(NULL), _last(NULL), _reserved_last(NULL), _alloc(r.alloc) {
+	vector(const vector &r) : _first(NULL), _last(NULL), _reserved_last(NULL), _alloc(r._alloc) {
 		reserve(r.size());
 		pointer dest = _first;
 		for (const_iterator src = r.begin(), _last = r.end(); src != _last; ++dest, ++src)
