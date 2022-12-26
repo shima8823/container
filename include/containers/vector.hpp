@@ -199,58 +199,41 @@ public:
 
 	// Modifiers3
 
-	void resize(size_type sz) {
-		if (sz < size()) {
-			difference_type diff = size() - sz;
-			destroy_until(rbegin() + diff);
-			_last = _first + sz;
-		} else if (sz > size()) {
-			reserve(sz);
-			for (; _last != _reserved_last; ++_last)
-				construct(_last);
-		}
-	}
-	void resize(size_type sz, const_reference value) {
-		if (sz < size()) {
-			difference_type diff = size() - sz;
-			destroy_until(rbegin() + diff);
-			_last = _first + sz;
-		} else if (sz > size()) {
-			reserve(sz);
-			for (; _last != _reserved_last; ++_last)
-				construct(_last, value);
-		}
+	void resize(size_type count, value_type value = T()) {
+		if (count < size())
+			erase(begin() + count, end());
+		else if (count > size())
+			insert(end(), count - size(), value);
 	}
 
-	iterator insert( const_iterator pos, const T& value ){
+	iterator insert( iterator pos, const T& value ){
 		difference_type offset = pos - begin();
 		insert(pos, 1, value);
 		return begin() + offset;
 	}
-	void insert( const_iterator pos, size_type count, const T& value ) {
+	void insert( iterator pos, size_type count, const T& value ) {
 		if (count == 0) return;
 		difference_type	offset = pos - begin();
 		size_type		new_size = size() + count;
-
 		if (new_size > capacity())
 			reserve(recommend(new_size));
-		iterator new_pos = begin() + offset;
-		while (new_size < size())
+		pointer new_pos = _first + offset;
+		while (new_size > size())
 			construct(_last++);
 		std::copy_backward(new_pos, _last - count, _last);
 		std::fill(new_pos, new_pos + count, value);
 	}
 	template< class InputIt >
 	typename ft::enable_if<!ft::is_integral<InputIt>::value, void>::type
-	insert( const_iterator pos, InputIt first, InputIt last ){
+	insert( iterator pos, InputIt first, InputIt last ){
 		difference_type count = std::distance(first, last);
 		if (count == 0) return;
 		difference_type	offset = pos - begin();
 		size_type		new_size = size() + count;
 		if (new_size > capacity())
 			reserve(recommend(new_size));
-		iterator new_pos = begin() + offset;
-		while (new_size < size())
+		pointer new_pos = _first + offset;
+		while (new_size > size())
 			construct(_last++);
 		std::copy_backward(new_pos, _last - count, _last);
 		std::copy(first, last, new_pos);
@@ -259,6 +242,9 @@ public:
 	iterator erase( iterator pos ) {
 		return erase(pos, pos + 1);
 	}
+	// 42, 21, -21, -42
+	// first = begin() + 1, last = begin() + 2;
+	// 42, -21, -42
 	iterator erase( iterator first, iterator last ) {
 		difference_type erase_size = std::distance(first, last);
 		if (first != last) {
@@ -266,7 +252,7 @@ public:
 				std::copy(last, end(), first);
 			destroy_until(rbegin() + erase_size);
 		}
-		return first; //last?
+		return first;
 	}
 
 	void pop_back() {destroy_until(rbegin() + 1);}
@@ -317,43 +303,43 @@ private:
 };
 
 template< class T, class Alloc >
-bool operator==( const std::vector<T,Alloc>& lhs,
-                 const std::vector<T,Alloc>& rhs )
+bool operator==( const ft::vector<T,Alloc>& lhs,
+                 const ft::vector<T,Alloc>& rhs )
 {
 	return lhs.size() == rhs.size() && ft::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
 template< class T, class Alloc >
-bool operator!=( const std::vector<T,Alloc>& lhs,
-                 const std::vector<T,Alloc>& rhs )
+bool operator!=( const ft::vector<T,Alloc>& lhs,
+                 const ft::vector<T,Alloc>& rhs )
 {
 	return !(lhs == rhs);
 }
 
 template< class T, class Alloc >
-bool operator<( const std::vector<T,Alloc>& lhs,
-                const std::vector<T,Alloc>& rhs )
+bool operator<( const ft::vector<T,Alloc>& lhs,
+                const ft::vector<T,Alloc>& rhs )
 {
 	return ft::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
 }
 
 template< class T, class Alloc >
-bool operator<=( const std::vector<T,Alloc>& lhs,
-                 const std::vector<T,Alloc>& rhs )
+bool operator<=( const ft::vector<T,Alloc>& lhs,
+                 const ft::vector<T,Alloc>& rhs )
 {
 	return !(rhs < lhs);
 }
 
 template< class T, class Alloc >
-bool operator>( const std::vector<T,Alloc>& lhs,
-                const std::vector<T,Alloc>& rhs )
+bool operator>( const ft::vector<T,Alloc>& lhs,
+                const ft::vector<T,Alloc>& rhs )
 {
 	return rhs < lhs;
 }
 
 template< class T, class Alloc >
-bool operator>=( const std::vector<T,Alloc>& lhs,
-                 const std::vector<T,Alloc>& rhs )
+bool operator>=( const ft::vector<T,Alloc>& lhs,
+                 const ft::vector<T,Alloc>& rhs )
 {
 	return !(lhs < rhs);
 }

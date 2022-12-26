@@ -38,7 +38,7 @@ public:
 		return *this;
 	}
 
-	virtual ~reverse_iterator() {} // ?
+	virtual ~reverse_iterator() {}
 
 	iterator_type base() const { return _current; }
 	reference operator*() const {Iter tmp = _current; return *--tmp;}
