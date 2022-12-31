@@ -73,7 +73,7 @@ public:
 
 	ft::pair<iterator,bool> insert (const value_type& val) {return _M_t._M_insert_unique(val);}
 
-	// size_type erase(const key_type& key) { return _M_t.erase(key); }
+	size_type erase(const key_type& key) { return _M_t.erase(key); }
 
 	// Lookup
 
