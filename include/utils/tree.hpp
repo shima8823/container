@@ -95,18 +95,21 @@ static _Rb_tree_node<_Val>* local_Rb_tree_increment(_Rb_tree_node<_Val>* __x) th
 	return __x;
 }
 
+template <typename _Val>
 _Rb_tree_node<_Val>*
 _Rb_tree_increment(_Rb_tree_node<_Val>* __x) throw ()
 {
 	return local_Rb_tree_increment(__x);
 }
 
+template <typename _Val>
 const _Rb_tree_node<_Val>*
 _Rb_tree_increment(const _Rb_tree_node<_Val>* __x) throw ()
 {
 	return local_Rb_tree_increment(const_cast<_Rb_tree_node<_Val>*>(__x));
 }
 
+template <typename _Val>
 static _Rb_tree_node<_Val>*
 local_Rb_tree_decrement(_Rb_tree_node<_Val>* __x) throw ()
 {
@@ -137,12 +140,14 @@ local_Rb_tree_decrement(_Rb_tree_node<_Val>* __x) throw ()
 	return __x;
 }
 
+template <typename _Val>
 _Rb_tree_node<_Val>*
 _Rb_tree_decrement(_Rb_tree_node<_Val>* __x) throw ()
 {
 	return local_Rb_tree_decrement(__x);
 }
 
+template <typename _Val>
 const _Rb_tree_node<_Val>*
 _Rb_tree_decrement(const _Rb_tree_node<_Val>* __x) throw ()
 {
@@ -198,11 +203,13 @@ struct _Rb_tree_iterator
 		return __tmp;
 	}
 
-	bool operator==(const _Self& __x, const _Self& __y) {
-		return __x._M_node == __y._M_node;
+	bool operator==(const _Self& __x) {
+		return _M_node == __x._M_node;
 	}
 
-	// operator!=
+	bool operator!=(const _Self& __x) {
+		return _M_node != __x._M_node;
+	}
 };
 
 /*--------------------------------------------------------------------------*/
@@ -222,7 +229,7 @@ struct _Rb_tree_const_iterator
 	typedef ptrdiff_t			 difference_type;
 
 	typedef _Rb_tree_const_iterator<_Tp>		_Self;
-	typedef const _Rb_tree_node<_Tp>::_Link_type	_Link_type;
+	typedef const _Rb_tree_node<_Tp>*			_Link_type;
 
 	_Rb_tree_const_iterator() : _M_node() { }
 
@@ -259,11 +266,13 @@ struct _Rb_tree_const_iterator
 		return __tmp;
 	}
 
-	bool operator==(const _Self& __x, const _Self& __y) {
-		return __x._M_node == __y._M_node;
+	bool operator==(const _Self& __x) {
+		return _M_node == __x._M_node;
 	}
 
-	// operator!=
+	bool operator!=(const _Self& __x) {
+		return _M_node != __x._M_node;
+	}
 
 	_Link_type _M_node;
 };
@@ -308,6 +317,12 @@ class _Rb_tree
 	typedef _Rb_tree_const_iterator<value_type> const_iterator;
 	typedef ft::reverse_iterator<iterator>       reverse_iterator;
 	typedef ft::reverse_iterator<const_iterator> const_reverse_iterator;
+
+  public:
+	_Rb_tree() : _M_key_compare(key_compare()), _M_node_alloc(_Node_allocator()) {
+		_M_header = _M_create_node(value_type());
+		_M_reset();
+	}
 
   // myhelper 
 
@@ -355,21 +370,21 @@ class _Rb_tree
 
 	void _M_reset() {
 		_M_header->_M_color = _S_red;
-		_M_header._M_parent = 0;
-		_M_header._M_left = &_M_header;
-		_M_header._M_right = &_M_header;
+		_M_header->_M_parent = 0;
+		_M_header->_M_left = _M_header;
+		_M_header->_M_right = _M_header;
 		_M_node_count = 0;
 	}
 
-	void _M_move_data(_Rb_tree& __from) {
-		_M_header._M_color = __from._M_header._M_color;
-		_M_header._M_parent = __from._M_header._M_parent;
-		_M_header._M_left = __from._M_header._M_left;
-		_M_header._M_right = __from._M_header._M_right;
-		_M_header._M_parent->_M_parent = _M_header;
-		_M_node_count = __from._M_node_count;
-		__from._M_reset();
-	}
+	// void _M_move_data(_Rb_tree& __from) {
+	// 	_M_header._M_color = __from._M_header._M_color;
+	// 	_M_header._M_parent = __from._M_header._M_parent;
+	// 	_M_header._M_left = __from._M_header._M_left;
+	// 	_M_header._M_right = __from._M_header._M_right;
+	// 	_M_header._M_parent->_M_parent = _M_header;
+	// 	_M_node_count = __from._M_node_count;
+	// 	__from._M_reset();
+	// }
 
 	//// iterator
 
@@ -389,143 +404,161 @@ class _Rb_tree
 
 	//// insert
 
-  protected:
-	_Link_type BSTInsert(_Link_type root, _Link_type pt) {
-		if (root == NULL)
-			return pt;
-
-		if (_M_key_compare(_S_key(pt), _S_key(root))) {
-			root->_M_left = BSTInsert(root->_M_left, pt);
-			root->_M_left->_M_parent = root;
-		} else if (_M_key_compare(_S_key(root), _S_key(pt))) {
-			root->_M_right = BSTInsert(root->_M_right, pt);
-			root->_M_right->_M_parent = root;
+	ft::pair<_Link_type, _Link_type> _M_get_insert_unique_pos(const key_type &__k) {
+		typedef pair<_Link_type, _Link_type> _Res;
+		_Link_type __x = _S_root();
+		_Link_type __y = _M_end();
+		bool __comp = true;
+		while (__x != 0) {
+			__y = __x;
+			__comp = _M_key_compare(__k, _S_key(__x));
+			__x = __comp ? __x->_M_left : __x->_M_right;
 		}
-
-		return root;
+		iterator __j = iterator(__y);
+		if (__comp) {
+			if (__j == begin())
+				return _Res(__x, __y);
+			else
+				--__j;
+		}
+		if (_M_key_compare(_S_key(__j._M_node), __k))
+			return _Res(__x, __y);
+		return _Res(__j._M_node, 0);
 	}
 
-	void leftRotate(_Link_type x) {
-		_Link_type nParent = x->_M_right;
+	static void local_Rb_tree_rotate_right(_Link_type const __x,
+										_Link_type& __root) {
+		_Link_type const __y = __x->_M_left;
 
-		if (x == _S_root())
-			_M_root() = nParent;
+		__x->_M_left = __y->_M_right;
+		if (__y->_M_right != 0)
+		__y->_M_right->_M_parent = __x;
+		__y->_M_parent = __x->_M_parent;
 
-		x->moveDown(nParent);
-
-		x->_M_right = nParent->_M_left;
-
-		if (nParent->_M_left != NULL)
-			nParent->_M_left->_M_parent = x;
-		
-		nParent->_M_left = x;
-	}
-	
-	void rightRotate(_Link_type x) {
-		_Link_type nParent = x->_M_left;
-
-		if (x == _S_root())
-			_M_root() = nParent;
-
-		x->moveDown(nParent);
-
-		x->_M_left = nParent->_M_right;
-
-		if (nParent->_M_right != NULL)
-			nParent->_M_right->_M_parent = x;
-		
-		nParent->_M_right = x;
+		if (__x == __root)
+		__root = __y;
+		else if (__x == __x->_M_parent->_M_right)
+		__x->_M_parent->_M_right = __y;
+		else
+		__x->_M_parent->_M_left = __y;
+		__y->_M_right = __x;
+		__x->_M_parent = __y;
 	}
 
-	void fixRedRed(_Link_type& pt) {
-		_Link_type parent_pt = NULL;
-		_Link_type grand_parent_pt = NULL;
+	static void local_Rb_tree_rotate_left(_Link_type const __x,
+										_Link_type& __root) {
+		_Link_type const __y = __x->_M_right;
 
-		while ((pt != _S_root()) && (pt->_M_color != _S_black) &&
-				(pt->_M_parent->_M_color == _S_red))
-		{
-			parent_pt = pt->_M_parent;
-			grand_parent_pt = pt->_M_parent->_M_parent;
+		__x->_M_right = __y->_M_left;
+		if (__y->_M_left !=0)
+		__y->_M_left->_M_parent = __x;
+		__y->_M_parent = __x->_M_parent;
 
-			if (parent_pt == grand_parent_pt->_M_left) {
-				_Link_type uncle_pt = grand_parent_pt->_M_right;
-			
-				if (uncle_pt != NULL && uncle_pt->_Mcolor == _S_red) {
-					grand_parent_pt->_M_color = _S_red;
-					parent_pt->_M_color = _S_black;
-					uncle_pt-> _M_color = _S_black;
-					pt = grand_parent_pt;
+		if (__x == __root)
+		__root = __y;
+		else if (__x == __x->_M_parent->_M_left)
+		__x->_M_parent->_M_left = __y;
+		else
+		__x->_M_parent->_M_right = __y;
+		__y->_M_left = __x;
+		__x->_M_parent = __y;
+	}
+
+	void _Rb_tree_insert_and_rebalance(const bool __insert_left,
+									_Link_type __x,
+									_Link_type __p,
+									_Link_type& __header) throw () {
+		_Link_type & __root = __header->_M_parent;
+
+		// Initialize fields in new node to insert.
+		__x->_M_parent = __p;
+		__x->_M_left = 0;
+		__x->_M_right = 0;
+		__x->_M_color = _S_red;
+
+		// Insert.
+		// Make new node child of parent and maintain root, leftmost and
+		// rightmost nodes.
+		// N.B. First node is always inserted left.
+		if (__insert_left) {
+			__p->_M_left = __x; // also makes leftmost = __x when __p == &__header
+
+			if (__p == __header) {
+				__header->_M_parent = __x;
+				__header->_M_right = __x;
+			}
+			else if (__p == __header->_M_left)
+				__header->_M_left = __x; // maintain leftmost pointing to min node
+		} else {
+			__p->_M_right = __x;
+
+			if (__p == __header->_M_right)
+				__header->_M_right = __x; // maintain rightmost pointing to max node
+		}
+		// Rebalance.
+		while (__x != __root && __x->_M_parent->_M_color == _S_red) {
+			_Link_type const __xpp = __x->_M_parent->_M_parent;
+
+			if (__x->_M_parent == __xpp->_M_left) {
+				_Link_type const __y = __xpp->_M_right;
+				if (__y && __y->_M_color == _S_red) {
+					__x->_M_parent->_M_color = _S_black;
+					__y->_M_color = _S_black;
+					__xpp->_M_color = _S_red;
+					__x = __xpp;
 				} else {
-					if (pt == parent_pt->_M_right) {
-						leftRotate(parent_pt);
-						pt = parent_pt;
-						parent_pt = pt->_M_parent;
+					if (__x == __x->_M_parent->_M_right) {
+						__x = __x->_M_parent;
+						local_Rb_tree_rotate_left(__x, __root);
 					}
-
-					rightRotate(grand_parent_pt);
-					std::swap(parent_pt->_M_color, grand_parent_pt->_M_color);
-					pt = parent_pt;
+					__x->_M_parent->_M_color = _S_black;
+					__xpp->_M_color = _S_red;
+					local_Rb_tree_rotate_right(__xpp, __root);
 				}
 			} else {
-				_Link_type uncle_pt = grand_parent_pt->_M_left;
-
-				if (uncle_pt != NULL && uncle_pt->_Mcolor == _S_red) {
-					grand_parent_pt->_M_color = _S_red;
-					parent_pt->_M_color = _S_black;
-					uncle_pt-> _M_color = _S_black;
-					pt = grand_parent_pt;
+				_Link_type const __y = __xpp->_M_left;
+				if (__y && __y->_M_color == _S_red) {
+					__x->_M_parent->_M_color = _S_black;
+					__y->_M_color = _S_black;
+					__xpp->_M_color = _S_red;
+					__x = __xpp;
 				} else {
-					if (pt == parent_pt->_M_left) {
-						rightRotate(parent_pt);
-						pt = parent_pt;
-						parent_pt = pt->_M_parent;
+					if (__x == __x->_M_parent->_M_left) {
+						__x = __x->_M_parent;
+						local_Rb_tree_rotate_right(__x, __root);
 					}
-
-					leftRotate(grand_parent_pt);
-					std::swap(parent_pt->_M_color, grand_parent_pt->_M_color);
-					pt = parent_pt;
+					__x->_M_parent->_M_color = _S_black;
+					__xpp->_M_color = _S_red;
+					local_Rb_tree_rotate_left(__xpp, __root);
 				}
 			}
 		}
-		
-		_M_root()->_M_color = _S_black;
+		__root->_M_color = _S_black;
 	}
 
-  public:
-	ft::pair<iterator, bool> insert(const value_type& x) {
-		ft::pair<iterator, bool> ret;
+	iterator _M_insert_(_Link_type __x, _Link_type __p, const value_type &__v) {
+		bool __insert_left = (__x != 0 || __p == _M_end()
+					|| _M_key_compare(_KeyOfValue()(__v), _S_key(__p)));
 
-		iterator it = lower_bound(_S_key(x));
-		if (it != end() && !_M_key_compare(_S_key(x), _S_key(it))) {
-			ret.first == it;
-			ret.second = false;
-			return ret;
-		}
+		_Link_type __z = _M_create_node(__v);
 
-		_Link_type pt = _M_create_node(x);
-		_Link_type old = pt;
-
-		_M_root() = BSTInsert(_S_root(), pt);
-
-		fixRedRed(pt);
-
-		_M_root()->_M_parent = _M_header;
-
-		_M_header->_M_left = _S_mostleft();
-		_M_header->_M_right = _S_mostright();
-
-		ret.first = (iterator)old;
-		ret.second = true;
-		return ret;
+		_Rb_tree_insert_and_rebalance(__insert_left, __z, __p, _M_header);
+		++_M_node_count;
+		return iterator(__z);
 	}
 
-	//// node helper (_M_xxx)
+	ft::pair<iterator, bool> _M_insert_unique(const value_type& __v) {
+		typedef pair<iterator, bool> _Res;
+		pair<_Link_type, _Link_type> __res = _M_get_insert_unique_pos(_KeyOfValue()(__v));
+		if (__res.second)
+			return _Res(_M_insert_(__res.first, __res.second, __v), true);
+		return _Res(iterator(__res.first), false);
+	}
 
 	// _Alloc_node
 
   protected:
 	_Link_type _M_get_node() {
-		++_M_node_count;
 		return _M_node_alloc.allocate(1);
 	}
 
@@ -547,7 +580,7 @@ class _Rb_tree
 			node->_M_parent = NULL;
 			_Alloc value_alloc;
 			typename _Alloc::pointer p = value_alloc.allocate(1);
-			value_alloc.contruct(p, x);
+			value_alloc.construct(p, x);
 			node->_M_value_type = p;
 		} catch (...) {
 			_M_put_node(node);
@@ -599,340 +632,6 @@ class _Rb_tree
 		return _M_lower_bound(_S_root(), _M_end(), k);
 	}
 
-  public:
-	size_type erase(const key_type& key) {
-		if (_S_root() == NULL)
-			return 0;
-
-		iterator v = lower_bound(key);
-
-		if (v == end() || _M_key_compare(key, _S_key(v)))
-			return 0;
-
-		deleteNode(v.get_link());
-
-		// headerの更新
-		if (size()) {
-			_M_root()->_M_parent = _M_header;
-			_M_header->_M_left = _S_mostleft();
-			_M_header->_M_right = _S_mostright();
-		} else {
-			_M_root() = NULL;
-			_M_header->_M_left = _M_header;
-			_M_header->_M_right = _M_header;
-		}
-
-		return 1;
-	}
-	 // delete
-
- // find node that do not have a left child
- // in the subtree of the given node
- // 今いる場所から、左の突き当りノード
- _Link_type successor(_Link_type x) {
-   _Link_type temp = x;
-
-   while (temp->_M_left != NULL) temp = temp->_M_left;
-
-   return temp;
- }
-
- // find node that replaces a deleted node in BST
- _Link_type BSTreplace(_Link_type x) {
-   // when node have 2 children
-   // 子供が2人いるなら、RLLLLL
-   if (x->_M_left != NULL and x->_M_right != NULL)
-     return successor(x->_M_right);
-
-   // when leaf
-   if (x->_M_left == NULL and x->_M_right == NULL) return NULL;
-
-   // when single child
-   // 子供が1人なら左から返す。
-   if (x->_M_left != NULL)
-     return x->_M_left;
-   else
-     return x->_M_right;
- }
-
- // deletes the given node
- void deleteNode(_Link_type v) {
-   _Link_type u = BSTreplace(v);
-
-   // True when u and v are both black
-   bool uvBlack =
-       ((u == NULL or u->_M_color == _S_black) and (v->_M_color == _S_black));
-   _Link_type parent = v->_M_parent;
-
-   if (u == NULL) {  // vが葉
-     // u is NULL therefore v is leaf
-     if (v == _S_root()) {
-       // v is root, making root null
-       _M_root() = _M_header;
-     } else {
-       if (uvBlack) {
-         // u and v both black
-         // v is leaf, fix double black at v
-         /*
-              B
-             /
-           v:B
-         */
-         fixDoubleBlack(v);
-       } else {
-         // v is red
-         /*
-               B
-              / \
-           v:R  (R)
-         */
-         if (v->sibling() != NULL)
-           // sibling is not null, make it red"
-           v->sibling()->_M_color = _S_red;
-       }
-
-       // delete v from the tree
-       if (v->isOnLeft()) {
-         parent->_M_left = NULL;
-       } else {
-         parent->_M_right = NULL;
-       }
-     }
-     _M_put_node(v);
-     return;
-   }
-
-   if (v->_M_left == NULL or v->_M_right == NULL) {
-     // v has 1 child
-     if (v == _S_root()) {
-       // v is root, assign the value of u to v, and delete u
-       /*
-             v
-            /
-           u
-
-            u
-           / \
-          NU NU
-       */
-       _M_root() = u;
-       v->swapNode(u);
-       u->_M_left = u->_M_right = NULL;
-       _M_put_node(v);
-     } else {
-       // Detach v from tree and move u up
-       /*
-                B
-               /
-            v:R
-             /
-         u:(B)
-       */
-       if (v->isOnLeft()) {
-         parent->_M_left = u;
-       } else {
-         parent->_M_right = u;
-       }
-       _M_put_node(v);
-       u->_M_parent = parent;
-       if (uvBlack) {
-         // u and v both black, fix double black at u
-         fixDoubleBlack(u);
-       } else {
-         // u or v red, color u black
-         u->_M_color = _S_black;
-       }
-     }
-     return;
-   }
-
-   // v has 2 children, swap values with successor and recurse
-   /*
-    before del(B10)
-            B10:v
-           /   \
-         R7      R22
-        / \      /  \
-      B6  B8   B13:u B26
-      /
-     R2
-
-     after
-            B13
-           /   \
-         R7     B22
-        / \        \
-      B6  B8        R26
-      /
-     R2
-     */
-
-   if (v == _S_root()) _M_root() = u;
-   v->swapNode(u);
-   deleteNode(v);
- }
-
- void fixDoubleBlack(_Link_type x) {
-   if (x == _S_root())
-     // Reached root
-     return;
-
-   _Link_type sibling = x->sibling();
-   _Link_type parent = x->_M_parent;
-   if (sibling == NULL) {
-     // No sibiling, double black pushed up
-     fixDoubleBlack(parent);
-   } else {
-     if (sibling->_M_color == _S_red) {
-       // Sibling red
-       /*
-       before
-             B
-            / \
-         x:B   R
-
-       after
-            (R)
-            / \
-         x:B   (B)
-       */
-       parent->_M_color = _S_red;
-       sibling->_M_color = _S_black;
-       if (sibling->isOnLeft()) {
-         // left case
-         rightRotate(parent);
-       } else {
-         // right case
-         /*
-              (B)
-              /
-            (R)
-            /
-          x:B
-         */
-         leftRotate(parent);  // 右が持ち上がる
-       }
-       fixDoubleBlack(x);
-     } else {
-       // Sibling black
-       if (sibling->hasRedChild()) {
-         // 赤い子供がいるならおしまい
-         // vを削除しても、どの葉からも黒ノードが同じ数になる。
-         // at least 1 red children
-         if (sibling->_M_left != NULL and
-             sibling->_M_left->_M_color == _S_red) {  // 左が赤
-           if (sibling->isOnLeft()) {
-             // left left
-             sibling->_M_left->_M_color = sibling->_M_color;
-             sibling->_M_color = parent->_M_color;
-             rightRotate(parent);
-           } else {
-             // right left
-             sibling->_M_left->_M_color = parent->_M_color;
-             rightRotate(sibling);
-             leftRotate(parent);
-           }
-         } else {  // 右が赤
-           if (sibling->isOnLeft()) {
-             // left right
-             /*
-             before
-                 R
-                / \
-             x:B   B
-              /   /
-             R   R
-             xをdelすると、x下の葉がB0, それ以外がB1になってしまう
-
-             changeColor
-                 R
-                / \
-             x:B  (R)
-                  /
-                (B)
-
-             leftRotate
-                   (R)
-                   /  \
-                  R    B
-                /
-              x:B
-             changeColor
-                    (R)
-                    /  \
-           parent:(B)    B
-                 /
-               x:B
-             // xを除いた場合どの葉もB1になった。
-             */
-             sibling->_M_right->_M_color = parent->_M_color;
-             leftRotate(sibling);
-             rightRotate(parent);
-           } else {
-             // right right
-             sibling->_M_right->_M_color = sibling->_M_color;
-             sibling->_M_color = parent->_M_color;
-             leftRotate(parent);
-           }
-         }
-         parent->_M_color = _S_black;
-       } else {
-         // 2 black children
-         /*
-               R
-             /  \
-           x:B   B
-                / \
-               B   B
-           xがなくなるとx側がB1に。右側がB2になってしまう
-
-             (B)
-             /  \
-           x:B  (R)
-                / \
-               B   B
-         */
-         sibling->_M_color = _S_red;
-         if (parent->_M_color ==
-             _S_black)  // parent以下全体の黒が1個減ってしまうので、さらにparentで調整
-           fixDoubleBlack(parent);
-         else
-           parent->_M_color = _S_black;
-       }
-     }
-   }
- }
- // _Rb_tree_node
-
-  void swapNode(_Link_type& x) {
-   // xのまわり
-   _Link_type xp = x->_M_parent;
-   _Link_type xr = x->_M_right;
-   _Link_type xl = x->_M_left;
-   _Link_type tp = _M_parent;
-   _Link_type tr = _M_right;
-   _Link_type tl = _M_left;
-
-   if (xp->_M_left == x)
-     xp->_M_left = this;
-   else if (xp->_M_right == x)
-     xp->_M_right = this;
-   if (xl) xl->_M_parent = this;
-   if (xr) xr->_M_parent = this;
-
-   // 自分のまわり
-   if (isOnLeft())
-     tp->_M_left = x;
-   else
-     tp->_M_right = x;
-   if (tl) tl->_M_parent = x;
-   if (tr) tr->_M_parent = x;
-
-   std::swap(_M_color, x->_M_color);
-   std::swap(_M_parent, x->_M_parent);
-   std::swap(_M_right, x->_M_right);
-   std::swap(_M_left, x->_M_left);
- }
 };
 
 } // namespace ft

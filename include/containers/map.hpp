@@ -1,17 +1,20 @@
 #ifndef MAP_HPP
 #define MAP_HPP
 
+#include <tree.hpp>
+#include <stl_function.hpp>
+
 namespace ft
 {
 
 template<class Key, class T,
 		 class Compare = std::less<Key>,
-		 class Allocator = std::allocator<std::pair<const Key, T>>>
+		 class Allocator = std::allocator<ft::pair<const Key, T> > >
 class map {
 public:
 	typedef Key						key_type;
 	typedef T						mapped_type;
-	typedef std::pair<const Key, T>	value_type;
+	typedef ft::pair<const Key, T>	value_type;
 	typedef Compare					key_compare;
 	typedef Allocator				allocator_type;
 
@@ -33,7 +36,7 @@ public:
 
 
 private:
-	typedef _Rb_tree<key_type, value_type, key_compare, allocator_type> _Rep_type;
+	typedef _Rb_tree<key_type, value_type, _Select1st<value_type>, key_compare, allocator_type> _Rep_type;
 	_Rep_type _M_t;
 
 public:
@@ -68,9 +71,9 @@ public:
 
 	// Modifiers
 
-	ft::pair<iterator,bool> insert (const value_type& val) {
-		return _M_t.insert(val);
-	}
+	ft::pair<iterator,bool> insert (const value_type& val) {return _M_t._M_insert_unique(val);}
+
+	// size_type erase(const key_type& key) { return _M_t.erase(key); }
 
 	// Lookup
 
