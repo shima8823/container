@@ -51,7 +51,25 @@ public:
 	typedef typename _Rep_type::reverse_iterator		reverse_iterator;
 	typedef typename _Rep_type::const_reverse_iterator	const_reverse_iterator;
 
+	// constructor
+
 	map() : _M_t() {}
+
+	explicit map(const Compare& comp, const Allocator& alloc = Allocator())
+		: _M_t(comp, alloc) { }
+
+	template< class InputIt >
+	map(InputIt first, InputIt last, const Compare& comp = Compare(), const Allocator& alloc = Allocator())
+		: _M_t(comp, alloc) 
+	{
+		_M_t._M_insert_range_unique(first, last);
+	}
+
+	// copy
+
+	map(const map& other) : _M_t(other._M_t) { }
+
+	allocator_type get_allocator() const {return allocator_type(_M_t.get_allocator());}
 
 	// Iterators
 

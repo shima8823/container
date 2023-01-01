@@ -319,15 +319,86 @@ class _Rb_tree
 	typedef ft::reverse_iterator<const_iterator> const_reverse_iterator;
 
   public:
+
+	// constructor/destructor
+
 	_Rb_tree() : _M_key_compare(key_compare()), _M_node_alloc(_Node_allocator()) {
 		_M_header = _M_create_node(value_type());
 		_M_reset();
 	}
+
+	_Rb_tree(const _Compare& __comp, const allocator_type& __a = allocator_type())
+		: _M_key_compare(__comp), _M_node_alloc(_Node_allocator(__a))
+	{
+		_M_header = _M_create_node(value_type());
+		_M_reset();
+	}
+
 	~_Rb_tree() {
 		clear();
 		_M_drop_node(_M_header);
 	}
 
+	// copy
+
+	_Rb_tree(const _Rb_tree& __x) {
+		_M_header = _M_create_node(value_type());
+		_M_reset();
+		
+		if (__x._M_root() != 0)
+			_M_root() = _M_copy(__x);
+	}
+
+	// copy 3つあるけどとりあえず2つ
+
+	_Link_type _M_clone_node(_Link_type __x) {
+		_Link_type __tmp = _M_create_node(*(__x->_M_value_type));
+		__tmp->_M_color = __x->_M_color;
+		__tmp->_M_left = 0;
+		__tmp->_M_right = 0;
+		return __tmp;
+	}
+
+	_Link_type _M_copy(_Link_type __x, _Link_type __p)
+	{
+		// Structural copy. __x and __p must be non-null.
+		_Link_type __top = _M_clone_node(__x);
+		__top->_M_parent = __p;
+
+		try {
+			if (__x->_M_right)
+				__top->_M_right = _M_copy(_S_right(__x), __top);
+			__p = __top;
+			__x = _S_left(__x);
+
+			while (__x != 0)
+			{
+				_Link_type __y = _M_clone_node(__x);
+				__p->_M_left = __y;
+				__y->_M_parent = __p;
+				if (__x->_M_right)
+					__y->_M_right = _M_copy(_S_right(__x), __y);
+				__p = __y;
+				__x = _S_left(__x);
+			}
+		} catch(...) {
+			_M_erase(__top);
+			throw;
+		}
+		return __top;
+	}
+
+	_Link_type _M_copy(const _Rb_tree& __x) {
+		_Link_type __root = _M_copy(__x._M_begin(), _M_end());
+		_M_leftmost() = _S_minimum(__root);
+		_M_rightmost() = _S_maximum(__root);
+		_M_node_count = __x._M_node_count;
+		_M_key_compare = __x._M_key_compare;
+		_M_node_alloc = __x._M_node_alloc;
+		return __root;
+	}
+
+	allocator_type get_allocator() const {return allocator_type(_M_node_alloc);}
   // myhelper 
 
   protected:
@@ -347,6 +418,7 @@ class _Rb_tree
 	_Const_Link_type _M_root() const {return _M_header->_M_parent;}
 
 	_Link_type _M_begin() { return _M_header->_M_parent; }
+	_Link_type _M_begin() const { return _M_header->_M_parent; }
 
 	static _Link_type _S_right(_Link_type __x) {return __x->_M_right;}
 	static _Link_type _S_left(_Link_type __x) {return __x->_M_left;}
@@ -374,6 +446,11 @@ class _Rb_tree
 	_Const_Link_type _S_mostright() const {
 		return (_Const_Link_type)_S_mostright();
 	}
+
+	_Link_type& _M_rightmost() {return _M_header->_M_right;}
+	_Link_type _M_rightmost() const {return _M_header->_M_right;}
+	_Link_type& _M_leftmost() {return _M_header->_M_left;}
+	_Link_type _M_leftmost() const {return _M_header->_M_left;}
 
 	static _Link_type _S_minimum(_Link_type __x) {
 		while (__x->_M_left != 0)
@@ -576,6 +653,74 @@ class _Rb_tree
 		return _Res(iterator(__res.first), false);
 	}
 
+	pair<_Link_type, _Link_type> _M_get_insert_hint_unique_pos(const_iterator __position, const key_type& __k) {
+		iterator __pos = __position._M_const_cast();
+		typedef pair<_Link_type, _Link_type> _Res;
+
+		// end()
+		if (__pos._M_node == _M_end())
+		{
+			if (size() > 0
+				&& _M_key_compare(_S_key(_M_rightmost()), __k))
+				return _Res(0, _M_rightmost());
+			else
+				return _M_get_insert_unique_pos(__k);
+		}
+		else if (_M_key_compare(__k, _S_key(__pos._M_node)))
+		{
+			// First, try before...
+			iterator __before = __pos;
+			if (__pos._M_node == _M_leftmost()) // begin()
+				return _Res(_M_leftmost(), _M_leftmost());
+			else if (_M_key_compare(_S_key((--__before)._M_node), __k))
+			{
+				if (_S_right(__before._M_node) == 0)
+					return _Res(0, __before._M_node);
+				else
+					return _Res(__pos._M_node, __pos._M_node);
+			}
+			else
+				return _M_get_insert_unique_pos(__k);
+		}
+		else if (_M_key_compare(_S_key(__pos._M_node), __k))
+		{
+			// ... then try after.
+			iterator __after = __pos;
+			if (__pos._M_node == _M_rightmost())
+				return _Res(0, _M_rightmost());
+			else if (_M_key_compare(__k, _S_key((++__after)._M_node)))
+			{
+				if (_S_right(__pos._M_node) == 0)
+					return _Res(0, __pos._M_node);
+				else
+					return _Res(__after._M_node, __after._M_node);
+			}
+			else
+				return _M_get_insert_unique_pos(__k);
+		}
+		else
+		// Equivalent keys.
+		return _Res(__pos._M_node, 0);
+	}
+
+	iterator _M_insert_unique_(const_iterator __position, const _Val& __v)
+	{
+		pair<_Link_type, _Link_type> __res
+			= _M_get_insert_hint_unique_pos(__position, _KeyOfValue()(__v));
+
+		if (__res.second)
+			return _M_insert_(__res.first, __res.second, __v);
+		return iterator(__res.first);
+	}
+
+	template<typename _InputIterator>
+	void
+	_M_insert_range_unique(_InputIterator __first, _InputIterator __last)
+	{
+		for (; __first != __last; ++__first)
+			_M_insert_unique_(end(), *__first);
+	}
+
 	//// erase
 
 	iterator _M_upper_bound(_Link_type __x, _Link_type __y, const _Key& __k) {
@@ -611,164 +756,148 @@ class _Rb_tree
 	}
 
 	_Link_type _Rb_tree_rebalance_for_erase(_Link_type const __z,
-			       _Link_type& __header) throw ()
-  {
-    _Link_type& __root = __header->_M_parent;
-    _Link_type& __leftmost = __header->_M_left;
-    _Link_type& __rightmost = __header->_M_right;
-    _Link_type __y = __z;
-    _Link_type __x = 0;
-    _Link_type __x_parent = 0;
-
-    if (__y->_M_left == 0)     // __z has at most one non-null child. y == z.
-      __x = __y->_M_right;     // __x might be null.
-    else
-      if (__y->_M_right == 0)  // __z has exactly one non-null child. y == z.
-	__x = __y->_M_left;    // __x is not null.
-      else
+					_Link_type& __header) throw ()
 	{
-	  // __z has two non-null children.  Set __y to
-	  __y = __y->_M_right;   //   __z's successor.  __x might be null.
-	  while (__y->_M_left != 0)
-	    __y = __y->_M_left;
-	  __x = __y->_M_right;
+		_Link_type& __root = __header->_M_parent;
+		_Link_type& __leftmost = __header->_M_left;
+		_Link_type& __rightmost = __header->_M_right;
+		_Link_type __y = __z;
+		_Link_type __x = 0;
+		_Link_type __x_parent = 0;
+
+		if (__y->_M_left == 0)     // __z has at most one non-null child. y == z.
+			__x = __y->_M_right;     // __x might be null.
+		else
+			if (__y->_M_right == 0)  // __z has exactly one non-null child. y == z.
+				__x = __y->_M_left;    // __x is not null.
+		else {
+			// __z has two non-null children.  Set __y to
+			__y = __y->_M_right;   //   __z's successor.  __x might be null.
+			while (__y->_M_left != 0)
+				__y = __y->_M_left;
+			__x = __y->_M_right;
+		}
+		if (__y != __z) {
+			// relink y in place of z.  y is z's successor
+			__z->_M_left->_M_parent = __y;
+			__y->_M_left = __z->_M_left;
+			if (__y != __z->_M_right) {
+				__x_parent = __y->_M_parent;
+				if (__x)
+					__x->_M_parent = __y->_M_parent;
+				__y->_M_parent->_M_left = __x;   // __y must be a child of _M_left
+				__y->_M_right = __z->_M_right;
+				__z->_M_right->_M_parent = __y;
+			}
+			else
+				__x_parent = __y;
+			if (__root == __z)
+				__root = __y;
+			else if (__z->_M_parent->_M_left == __z)
+				__z->_M_parent->_M_left = __y;
+			else
+				__z->_M_parent->_M_right = __y;
+			__y->_M_parent = __z->_M_parent;
+			std::swap(__y->_M_color, __z->_M_color);
+			__y = __z;
+			// __y now points to node to be actually deleted
+		} else { // __y == __z
+			__x_parent = __y->_M_parent;
+			if (__x)
+				__x->_M_parent = __y->_M_parent;
+			if (__root == __z)
+				__root = __x;
+			else
+				if (__z->_M_parent->_M_left == __z)
+					__z->_M_parent->_M_left = __x;
+			else
+				__z->_M_parent->_M_right = __x;
+			if (__leftmost == __z) {
+				if (__z->_M_right == 0)        // __z->_M_left must be null also
+					__leftmost = __z->_M_parent;
+				// makes __leftmost == _M_header if __z == __root
+				else
+					__leftmost = _S_minimum(__x);
+			}
+			if (__rightmost == __z) {
+				if (__z->_M_left == 0)         // __z->_M_right must be null also
+					__rightmost = __z->_M_parent;
+				// makes __rightmost == _M_header if __z == __root
+				else                      // __x == __z->_M_left
+					__rightmost = _S_maximum(__x);
+			}
+		}
+		if (__y->_M_color != _S_red) {
+			while (__x != __root && (__x == 0 || __x->_M_color == _S_black))
+				if (__x == __x_parent->_M_left) {
+					_Link_type __w = __x_parent->_M_right;
+					if (__w->_M_color == _S_red) {
+						__w->_M_color = _S_black;
+						__x_parent->_M_color = _S_red;
+						local_Rb_tree_rotate_left(__x_parent, __root);
+						__w = __x_parent->_M_right;
+					}
+					if ((__w->_M_left == 0 ||
+						__w->_M_left->_M_color == _S_black) &&
+						(__w->_M_right == 0 ||
+						__w->_M_right->_M_color == _S_black))
+					{
+						__w->_M_color = _S_red;
+						__x = __x_parent;
+						__x_parent = __x_parent->_M_parent;
+					} else {
+						if (__w->_M_right == 0
+							|| __w->_M_right->_M_color == _S_black)
+						{
+							__w->_M_left->_M_color = _S_black;
+							__w->_M_color = _S_red;
+							local_Rb_tree_rotate_right(__w, __root);
+							__w = __x_parent->_M_right;
+						}
+						__w->_M_color = __x_parent->_M_color;
+						__x_parent->_M_color = _S_black;
+						if (__w->_M_right)
+							__w->_M_right->_M_color = _S_black;
+						local_Rb_tree_rotate_left(__x_parent, __root);
+						break;
+					}
+				} else {
+					// same as above, with _M_right <-> _M_left.
+					_Link_type __w = __x_parent->_M_left;
+					if (__w->_M_color == _S_red) {
+						__w->_M_color = _S_black;
+						__x_parent->_M_color = _S_red;
+						local_Rb_tree_rotate_right(__x_parent, __root);
+						__w = __x_parent->_M_left;
+					}
+					if ((__w->_M_right == 0 ||
+					__w->_M_right->_M_color == _S_black) &&
+					(__w->_M_left == 0 ||
+					__w->_M_left->_M_color == _S_black))
+					{
+						__w->_M_color = _S_red;
+						__x = __x_parent;
+						__x_parent = __x_parent->_M_parent;
+					} else {
+						if (__w->_M_left == 0 || __w->_M_left->_M_color == _S_black){
+							__w->_M_right->_M_color = _S_black;
+							__w->_M_color = _S_red;
+							local_Rb_tree_rotate_left(__w, __root);
+							__w = __x_parent->_M_left;
+						}
+						__w->_M_color = __x_parent->_M_color;
+						__x_parent->_M_color = _S_black;
+						if (__w->_M_left)
+							__w->_M_left->_M_color = _S_black;
+						local_Rb_tree_rotate_right(__x_parent, __root);
+						break;
+					}
+				}
+			if (__x)
+				__x->_M_color = _S_black;
+		}
+		return __y;
 	}
-    if (__y != __z)
-      {
-	// relink y in place of z.  y is z's successor
-	__z->_M_left->_M_parent = __y;
-	__y->_M_left = __z->_M_left;
-	if (__y != __z->_M_right)
-	  {
-	    __x_parent = __y->_M_parent;
-	    if (__x) __x->_M_parent = __y->_M_parent;
-	    __y->_M_parent->_M_left = __x;   // __y must be a child of _M_left
-	    __y->_M_right = __z->_M_right;
-	    __z->_M_right->_M_parent = __y;
-	  }
-	else
-	  __x_parent = __y;
-	if (__root == __z)
-	  __root = __y;
-	else if (__z->_M_parent->_M_left == __z)
-	  __z->_M_parent->_M_left = __y;
-	else
-	  __z->_M_parent->_M_right = __y;
-	__y->_M_parent = __z->_M_parent;
-	std::swap(__y->_M_color, __z->_M_color);
-	__y = __z;
-	// __y now points to node to be actually deleted
-      }
-    else
-      {                        // __y == __z
-	__x_parent = __y->_M_parent;
-	if (__x)
-	  __x->_M_parent = __y->_M_parent;
-	if (__root == __z)
-	  __root = __x;
-	else
-	  if (__z->_M_parent->_M_left == __z)
-	    __z->_M_parent->_M_left = __x;
-	  else
-	    __z->_M_parent->_M_right = __x;
-	if (__leftmost == __z)
-	  {
-	    if (__z->_M_right == 0)        // __z->_M_left must be null also
-	      __leftmost = __z->_M_parent;
-	    // makes __leftmost == _M_header if __z == __root
-	    else
-	      __leftmost = _S_minimum(__x);
-	  }
-	if (__rightmost == __z)
-	  {
-	    if (__z->_M_left == 0)         // __z->_M_right must be null also
-	      __rightmost = __z->_M_parent;
-	    // makes __rightmost == _M_header if __z == __root
-	    else                      // __x == __z->_M_left
-	      __rightmost = _S_maximum(__x);
-	  }
-      }
-    if (__y->_M_color != _S_red)
-      {
-	while (__x != __root && (__x == 0 || __x->_M_color == _S_black))
-	  if (__x == __x_parent->_M_left)
-	    {
-	      _Link_type __w = __x_parent->_M_right;
-	      if (__w->_M_color == _S_red)
-		{
-		  __w->_M_color = _S_black;
-		  __x_parent->_M_color = _S_red;
-		  local_Rb_tree_rotate_left(__x_parent, __root);
-		  __w = __x_parent->_M_right;
-		}
-	      if ((__w->_M_left == 0 ||
-		   __w->_M_left->_M_color == _S_black) &&
-		  (__w->_M_right == 0 ||
-		   __w->_M_right->_M_color == _S_black))
-		{
-		  __w->_M_color = _S_red;
-		  __x = __x_parent;
-		  __x_parent = __x_parent->_M_parent;
-		}
-	      else
-		{
-		  if (__w->_M_right == 0
-		      || __w->_M_right->_M_color == _S_black)
-		    {
-		      __w->_M_left->_M_color = _S_black;
-		      __w->_M_color = _S_red;
-		      local_Rb_tree_rotate_right(__w, __root);
-		      __w = __x_parent->_M_right;
-		    }
-		  __w->_M_color = __x_parent->_M_color;
-		  __x_parent->_M_color = _S_black;
-		  if (__w->_M_right)
-		    __w->_M_right->_M_color = _S_black;
-		  local_Rb_tree_rotate_left(__x_parent, __root);
-		  break;
-		}
-	    }
-	  else
-	    {
-	      // same as above, with _M_right <-> _M_left.
-	      _Link_type __w = __x_parent->_M_left;
-	      if (__w->_M_color == _S_red)
-		{
-		  __w->_M_color = _S_black;
-		  __x_parent->_M_color = _S_red;
-		  local_Rb_tree_rotate_right(__x_parent, __root);
-		  __w = __x_parent->_M_left;
-		}
-	      if ((__w->_M_right == 0 ||
-		   __w->_M_right->_M_color == _S_black) &&
-		  (__w->_M_left == 0 ||
-		   __w->_M_left->_M_color == _S_black))
-		{
-		  __w->_M_color = _S_red;
-		  __x = __x_parent;
-		  __x_parent = __x_parent->_M_parent;
-		}
-	      else
-		{
-		  if (__w->_M_left == 0 || __w->_M_left->_M_color == _S_black)
-		    {
-		      __w->_M_right->_M_color = _S_black;
-		      __w->_M_color = _S_red;
-		      local_Rb_tree_rotate_left(__w, __root);
-		      __w = __x_parent->_M_left;
-		    }
-		  __w->_M_color = __x_parent->_M_color;
-		  __x_parent->_M_color = _S_black;
-		  if (__w->_M_left)
-		    __w->_M_left->_M_color = _S_black;
-		  local_Rb_tree_rotate_right(__x_parent, __root);
-		  break;
-		}
-	    }
-	if (__x) __x->_M_color = _S_black;
-      }
-    return __y;
-  }
 
 	void _M_erase_aux(const_iterator __position)
     {
