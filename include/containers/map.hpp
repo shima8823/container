@@ -32,9 +32,6 @@ public:
 		}
 	};
 
-
-
-
 private:
 	typedef _Rb_tree<key_type, value_type, _Select1st<value_type>, key_compare, allocator_type> _Rep_type;
 	_Rep_type _M_t;
@@ -51,7 +48,7 @@ public:
 	typedef typename _Rep_type::reverse_iterator		reverse_iterator;
 	typedef typename _Rep_type::const_reverse_iterator	const_reverse_iterator;
 
-	// constructor
+	// constructor/destructor
 
 	map() : _M_t() {}
 
@@ -65,11 +62,40 @@ public:
 		_M_t._M_insert_range_unique(first, last);
 	}
 
+	~map() {}
+
 	// copy
 
 	map(const map& other) : _M_t(other._M_t) { }
 
+	map& operator=( const map& other ) {
+		if (this == &other)
+			return *this;
+		_M_t = other._M_t;
+		return *this;
+	}
+
 	allocator_type get_allocator() const {return allocator_type(_M_t.get_allocator());}
+
+	// Element access
+
+	T& at( const Key& key ) {
+		iterator __i = lower_bound(key);
+		if (__i == end() || key_comp()(key, (*__i).first))
+			std::__throw_out_of_range("map::at");
+		return (*__i).second;
+	}
+
+	const T& at( const Key& key ) const {
+		const_iterator __i = lower_bound(key);
+		if (__i == end() || key_comp()(key, (*__i).first))
+			std::__throw_out_of_range("map::at");
+		return (*__i).second;
+	}
+
+	T& operator[]( const Key& key ) {
+		return insert(ft::make_pair(key, T())).first->second;
+	}
 
 	// Iterators
 
@@ -86,22 +112,72 @@ public:
 
 	bool empty() const {return _M_t.empty();}
 	size_type size() const {return _M_t.size();}
+	size_type max_size() const {return _M_t.max_size();}
 
 	// Modifiers
+
+	void clear() {_M_t.clear();}
 
 	ft::pair<iterator,bool> insert (const value_type& val) {return _M_t._M_insert_unique(val);}
 
 	size_type erase(const key_type& key) { return _M_t.erase(key); }
 
+	void swap(map& other) {_M_t.swap(other._M_t);}
+
 	// Lookup
 
-	iterator lower_bound (const key_type& k) {
-		return _M_t.lower_bound(k);
-	}
-	const_iterator lower_bound (const key_type& k) const {
-		return _M_t.lower_bound(k);
-	}
+	size_type count(const Key& key) const {return _M_t.find(key) == _M_t.end() ? 0 : 1;}
+
+	iterator find(const Key& key) {return _M_t.find(key);}
+	const_iterator find(const Key& key) const {return _M_t.find(key);}
+
+	ft::pair<iterator,iterator> equal_range(const Key& key) {return _M_t.equal_range(key);}
+	ft::pair<const_iterator,const_iterator> equal_range(const Key& key) const {return _M_t.equal_range(key);}
+
+	// >=
+	iterator lower_bound(const key_type& k) {return _M_t.lower_bound(k);}
+	const_iterator lower_bound(const key_type& k) const {return _M_t.lower_bound(k);}
+
+	// <
+	iterator upper_bound(const Key& key) {return _M_t.upper_bound(key);}
+	const_iterator upper_bound(const Key& key) const {return _M_t.upper_bound(key);}
+
+	// Observers
+
+	key_compare key_comp() const {return _M_t.key_comp();}
+	value_compare value_comp() const {return value_compare(_M_t.key_comp());}
+
 };
+
+template< class Key, class T, class Compare, class Alloc >
+bool operator==( const ft::map<Key,T,Compare,Alloc>& lhs,
+                 const ft::map<Key,T,Compare,Alloc>& rhs )
+{ return lhs._M_t == rhs._M_t; }
+
+template< class Key, class T, class Compare, class Alloc >
+bool operator!=( const ft::map<Key,T,Compare,Alloc>& lhs,
+                 const ft::map<Key,T,Compare,Alloc>& rhs )
+{ return !(lhs == rhs); }
+
+template< class Key, class T, class Compare, class Alloc >
+bool operator<( const ft::map<Key,T,Compare,Alloc>& lhs,
+                const ft::map<Key,T,Compare,Alloc>& rhs )
+{ return lhs._M_t < rhs._M_t; }
+
+template< class Key, class T, class Compare, class Alloc >
+bool operator<=( const ft::map<Key,T,Compare,Alloc>& lhs,
+                 const ft::map<Key,T,Compare,Alloc>& rhs )
+{ return !(rhs < lhs); }
+
+template< class Key, class T, class Compare, class Alloc >
+bool operator>( const ft::map<Key,T,Compare,Alloc>& lhs,
+                const ft::map<Key,T,Compare,Alloc>& rhs )
+{ return rhs < lhs; }
+
+template< class Key, class T, class Compare, class Alloc >
+bool operator>=( const ft::map<Key,T,Compare,Alloc>& lhs,
+                 const ft::map<Key,T,Compare,Alloc>& rhs )
+{ return !(lhs < rhs); }
 
 } // namespace ft
 

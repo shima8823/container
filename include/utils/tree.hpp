@@ -398,6 +398,15 @@ class _Rb_tree
 		return __root;
 	}
 
+	_Rb_tree& operator=(const _Rb_tree& __x) {
+		if (this == &__x)
+			return *this;
+		clear();
+		if (__x._M_root() != 0)
+			_M_root() = _M_copy(__x);
+		return *this;
+	}
+
 	allocator_type get_allocator() const {return allocator_type(_M_node_alloc);}
   // myhelper 
 
@@ -422,30 +431,9 @@ class _Rb_tree
 
 	static _Link_type _S_right(_Link_type __x) {return __x->_M_right;}
 	static _Link_type _S_left(_Link_type __x) {return __x->_M_left;}
+	static _Const_Link_type _S_right(_Const_Link_type __x) {return __x->_M_right;}
+	static _Const_Link_type _S_left(_Const_Link_type __x) {return __x->_M_left;}
 
-	// most系はgccに存在しないので変更
-	_Link_type _S_mostleft() {
-		_Link_type ret = _S_root();
-		if (ret == NULL)
-			return _M_header;
-		while (ret->_M_left)
-			ret = ret->_M_left;
-		return ret;
-	}
-	_Const_Link_type _S_mostleft() const {
-		return (_Const_Link_type)_S_mostleft();
-	}
-	_Link_type _S_mostright() {
-		_Link_type ret = _S_root();
-		if (ret == NULL)
-			return _M_header;
-		while (ret->_M_right)
-			ret = ret->_M_right;
-		return ret;
-	}
-	_Const_Link_type _S_mostright() const {
-		return (_Const_Link_type)_S_mostright();
-	}
 
 	_Link_type& _M_rightmost() {return _M_header->_M_right;}
 	_Link_type _M_rightmost() const {return _M_header->_M_right;}
@@ -474,15 +462,15 @@ class _Rb_tree
 		_M_node_count = 0;
 	}
 
-	// void _M_move_data(_Rb_tree& __from) {
-	// 	_M_header._M_color = __from._M_header._M_color;
-	// 	_M_header._M_parent = __from._M_header._M_parent;
-	// 	_M_header._M_left = __from._M_header._M_left;
-	// 	_M_header._M_right = __from._M_header._M_right;
-	// 	_M_header._M_parent->_M_parent = _M_header;
-	// 	_M_node_count = __from._M_node_count;
-	// 	__from._M_reset();
-	// }
+	void _M_move_data(_Rb_tree& __from) {
+		_M_header->_M_color = __from._M_header->_M_color;
+		_M_header->_M_parent = __from._M_header->_M_parent;
+		_M_header->_M_left = __from._M_header->_M_left;
+		_M_header->_M_right = __from._M_header->_M_right;
+		_M_header->_M_parent->_M_parent = _M_header;
+		_M_node_count = __from._M_node_count;
+		__from._M_reset();
+	}
 
 	//// iterator
 
@@ -499,6 +487,13 @@ class _Rb_tree
 	
 	bool empty() const {return _M_node_count == 0;}
 	size_type size() const {return _M_node_count;}
+	size_type max_size() const {
+		return std::min<size_type>(
+			_M_node_alloc.max_size(),
+			std::numeric_limits<difference_type >::max());
+	}
+
+	// Modifiers
 
 	//// insert
 
@@ -723,38 +718,6 @@ class _Rb_tree
 
 	//// erase
 
-	iterator _M_upper_bound(_Link_type __x, _Link_type __y, const _Key& __k) {
-		while (__x != 0)
-			if (_M_key_compare(__k, _S_key(__x)))
-				__y = __x, __x = _S_left(__x);
-			else
-				__x = _S_right(__x);
-      return iterator(__y);
-	}
-
-	pair<iterator, iterator> equal_range(const _Key& __k)
-	{
-		_Link_type __x = _M_begin();
-		_Link_type __y = _M_end();
-		while (__x != 0)
-		{
-			if (_M_key_compare(_S_key(__x), __k))
-				__x = _S_right(__x);
-			else if (_M_key_compare(__k, _S_key(__x)))
-				__y = __x, __x = _S_left(__x);
-			else {
-				_Link_type __xu(__x);
-				_Link_type __yu(__y);
-				__y = __x, __x = _S_left(__x);
-				__xu = _S_right(__xu);
-				return pair<iterator,
-					iterator>(_M_lower_bound(__x, __y, __k),
-							_M_upper_bound(__xu, __yu, __k));
-			}
-		}
-		return pair<iterator, iterator>(iterator(__y), iterator(__y));
-	}
-
 	_Link_type _Rb_tree_rebalance_for_erase(_Link_type const __z,
 					_Link_type& __header) throw ()
 	{
@@ -919,7 +882,7 @@ class _Rb_tree
 	void clear() {
 		_M_erase(_M_begin());
 		_M_reset();
-    }
+	}
 
 	void _M_erase_aux(const_iterator __first, const_iterator __last) {
 		if (__first == begin() && __last == end())
@@ -934,6 +897,88 @@ class _Rb_tree
 		const size_type __old_size = size();
 		_M_erase_aux(__p.first, __p.second);
 		return __old_size - size();
+	}
+
+	void swap(_Rb_tree& __t) {
+		if (_M_root() == 0)
+		{
+			if (__t._M_root() != 0)
+				_M_move_data(__t);
+		}
+		else if (__t._M_root() == 0)
+			__t._M_move_data(*this);
+		else
+		{
+			std::swap(_M_root(), __t._M_root());
+			std::swap(_M_leftmost(), __t._M_leftmost());
+			std::swap(_M_rightmost(), __t._M_rightmost());
+
+			_M_root()->_M_parent = _M_end();
+			__t._M_root()->_M_parent = __t._M_end();
+			std::swap(_M_node_count, __t._M_node_count);
+		}
+		// No need to swap header's color as it does not change.
+		std::swap(_M_key_compare, __t._M_key_compare);
+		std::swap(_M_node_alloc, __t._M_node_alloc);
+	}
+
+	// Lookup
+
+	iterator find(const key_type& __k) {
+		iterator __j = _M_lower_bound(_M_begin(), _M_end(), __k);
+		return (__j == end() || _M_key_compare(__k, _S_key(__j._M_node))) ? end() : __j;
+	}
+
+	const_iterator find(const key_type& __k) const {
+		const_iterator __j = _M_lower_bound(_M_begin(), _M_end(), __k);
+		return (__j == end() || _M_key_compare(__k, _S_key(__j._M_node))) ? end() : __j;
+	}
+
+	pair<iterator, iterator> equal_range(const _Key& __k)
+	{
+		_Link_type __x = _M_begin();
+		_Link_type __y = _M_end();
+		while (__x != 0)
+		{
+			if (_M_key_compare(_S_key(__x), __k))
+				__x = _S_right(__x);
+			else if (_M_key_compare(__k, _S_key(__x)))
+				__y = __x, __x = _S_left(__x);
+			else {
+				_Link_type __xu(__x);
+				_Link_type __yu(__y);
+				__y = __x, __x = _S_left(__x);
+				__xu = _S_right(__xu);
+				return pair<iterator,
+					iterator>(_M_lower_bound(__x, __y, __k),
+							_M_upper_bound(__xu, __yu, __k));
+			}
+		}
+		return pair<iterator, iterator>(iterator(__y), iterator(__y));
+	}
+
+	pair<const_iterator, const_iterator> equal_range(const key_type& __k) const {
+		_Const_Link_type __x = _M_begin();
+		_Const_Link_type __y = _M_end();
+		while (__x != 0)
+		{
+		if (_M_key_compare(_S_key(__x), __k))
+			__x = _S_right(__x);
+		else if (_M_key_compare(__k, _S_key(__x)))
+			__y = __x, __x = _S_left(__x);
+		else
+			{
+			_Const_Link_type __xu(__x);
+			_Const_Link_type __yu(__y);
+			__y = __x, __x = _S_left(__x);
+			__xu = _S_right(__xu);
+			return pair<const_iterator,
+				const_iterator>(_M_lower_bound(__x, __y, __k),
+						_M_upper_bound(__xu, __yu, __k));
+			}
+		}
+		return pair<const_iterator, const_iterator>
+					(const_iterator(__y), const_iterator(__y));
 	}
 
 	// _Alloc_node 
@@ -1002,15 +1047,34 @@ class _Rb_tree
 		return iterator(y);
 	}
 
-	const_iterator _M_lower_bound(_Link_type x, _Link_type y, const _Key& k) const {
+	const_iterator _M_lower_bound(_Const_Link_type x, _Const_Link_type y, const _Key& k) const {
 		while (x != 0)
 			if (!_M_key_compare(_S_key(x), k))
 				y = x, x= x->_M_left;
 			else
 				x = _S_right(x);
-		return iterator(y);
+		return const_iterator(y);
 	}
 
+	iterator _M_upper_bound(_Link_type __x, _Link_type __y, const _Key& __k) {
+		while (__x != 0)
+			if (_M_key_compare(__k, _S_key(__x)))
+				__y = __x, __x = _S_left(__x);
+			else
+				__x = _S_right(__x);
+		return iterator(__y);
+	}
+
+	const_iterator _M_upper_bound(_Const_Link_type __x, _Const_Link_type __y, const _Key& __k) const {
+		while (__x != 0)
+			if (_M_key_compare(__k, _S_key(__x)))
+				__y = __x, __x = _S_left(__x);
+			else
+				__x = _S_right(__x);
+		return const_iterator(__y);
+	}
+
+  public:
 	// _S_root?
 	iterator lower_bound(const key_type& k) {
 		return _M_lower_bound(_S_root(), _M_end(), k);
@@ -1019,6 +1083,16 @@ class _Rb_tree
 	const_iterator lower_bound(const key_type& k) const {
 		return _M_lower_bound(_S_root(), _M_end(), k);
 	}
+
+	iterator upper_bound(const key_type& __k) {
+		return _M_upper_bound(_M_begin(), _M_end(), __k);
+	}
+
+	const_iterator upper_bound(const key_type& __k) const {
+		return _M_upper_bound(_M_begin(), _M_end(), __k);
+	}
+
+	_Compare key_comp() const {return _M_key_compare;}
 
 };
 
