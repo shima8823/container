@@ -498,6 +498,24 @@ public:
 			_M_insert_unique_(end(), *__first);
 	}
 
+	iterator _M_insert_unique_(const_iterator __position, const _Val& __v)
+	{
+		pair<_Link_type, _Link_type> __res
+			= _M_get_insert_hint_unique_pos(__position, _KeyOfValue()(__v));
+
+		if (__res.second)
+			return _M_insert_(__res.first, __res.second, __v);
+		return iterator(__res.first);
+	}
+
+	void erase(iterator __position) {
+		if (__position == end())
+			return ;
+		_M_erase_aux(__position);
+	}
+
+	void erase(iterator __first, iterator __last) {_M_erase_aux(__first, __last);}
+
 	size_type erase(const key_type& __x) {
 		pair<iterator, iterator> __p = equal_range(__x);
 		const size_type __old_size = size();
@@ -775,16 +793,6 @@ private:
 		else
 		// Equivalent keys.
 		return _Res(__pos._M_node, 0);
-	}
-
-	iterator _M_insert_unique_(const_iterator __position, const _Val& __v)
-	{
-		pair<_Link_type, _Link_type> __res
-			= _M_get_insert_hint_unique_pos(__position, _KeyOfValue()(__v));
-
-		if (__res.second)
-			return _M_insert_(__res.first, __res.second, __v);
-		return iterator(__res.first);
 	}
 
 	void _M_erase_aux(const_iterator __position)

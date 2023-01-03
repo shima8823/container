@@ -120,8 +120,14 @@ public:
 	void clear() {_M_t.clear();}
 
 	ft::pair<iterator,bool> insert (const value_type& val) {return _M_t._M_insert_unique(val);}
+	iterator insert(iterator pos, const value_type& val) {return _M_t._M_insert_unique_(pos, val);}
+	template< class InputIt >
+	void insert( InputIt first, InputIt last )
+	{return _M_t._M_insert_range_unique(first, last);}
 
-	size_type erase(const key_type& key) { return _M_t.erase(key); }
+	void erase( iterator pos ) {_M_t.erase(pos);}
+	void erase( iterator first, iterator last ) {_M_t.erase(first, last);}
+	size_type erase(const key_type& key) {return _M_t.erase(key);}
 
 	void swap(map& other) {_M_t.swap(other._M_t);}
 
