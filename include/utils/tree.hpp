@@ -35,24 +35,35 @@ struct _Rb_tree_node
 template <typename _Val>
 static _Rb_tree_node<_Val>* local_Rb_tree_increment(_Rb_tree_node<_Val>* __x) throw()
 {
-	//size == 0
+	/*
+		size == 0
+		番兵ノードが初期値のままの時
+		無限ループにならないように
+	*/
 	if (__x->_M_right == __x)
 		return __x;
 
 	if (__x->_M_right != 0)
 	{
+		// 右があったら右に進んで、左に進み続ける
 		__x = __x->_M_right;
 		while (__x->_M_left != 0)
 			__x = __x->_M_left;
 	}
 	else
 	{
+		// 右がなかったら親に戻る。
 		_Rb_tree_node<_Val>* __y = __x->_M_parent;
+		// 戻り続ける。
 		while (__x == __y->_M_right)
 		{
 			__x = __y;
 			__y = __y->_M_parent;
 		}
+		/*
+			通常はこのままtrueになるが
+			サイズが1の時 && 与えられた__x == rootの時にincrementされないようにする。
+		*/
 		if (__x->_M_right != __y)
 			__x = __y;
 	}
@@ -77,15 +88,20 @@ template <typename _Val>
 static _Rb_tree_node<_Val>*
 local_Rb_tree_decrement(_Rb_tree_node<_Val>* __x) throw ()
 {
-	//size == 0
+	/*
+		size == 0
+		番兵ノードが初期値のままの時
+		無限ループにならないように
+	*/
 	if (__x->_M_right == __x)
 		return __x;
 	
-	if (__x->_M_color == _S_red
-		&& __x->_M_parent->_M_parent == __x)
+	// m_headerの時は最大値を返す。
+	if (__x->_M_color == _S_red && __x->_M_parent->_M_parent == __x)
 		__x = __x->_M_right;
 	else if (__x->_M_left != 0)
 	{
+		// 左があったら左に進んで、右に進み続ける
 		_Rb_tree_node<_Val>* __y = __x->_M_left;
 		while (__y->_M_right != 0)
 			__y = __y->_M_right;
@@ -93,7 +109,9 @@ local_Rb_tree_decrement(_Rb_tree_node<_Val>* __x) throw ()
 	}
 	else
 	{
+		// 左がなかったら親に戻る。
 		_Rb_tree_node<_Val>* __y = __x->_M_parent;
+		// 戻り続ける。
 		while (__x == __y->_M_left)
 		{
 			__x = __y;
@@ -195,6 +213,8 @@ struct _Rb_tree_const_iterator
 	typedef _Rb_tree_const_iterator<_Tp>		_Self;
 	typedef const _Rb_tree_node<_Tp>*			_Link_type;
 
+	_Link_type _M_node;
+
 	_Rb_tree_const_iterator() : _M_node() { }
 
 	explicit _Rb_tree_const_iterator(_Link_type __x) : _M_node(__x) { }
@@ -237,8 +257,6 @@ struct _Rb_tree_const_iterator
 	bool operator!=(const _Self& __x) {
 		return _M_node != __x._M_node;
 	}
-
-	_Link_type _M_node;
 };
 
 /*--------------------------------------------------------------------------*/
@@ -249,6 +267,11 @@ template<typename _Key, typename _Val, typename _KeyOfValue,
 		typename _Compare, typename _Alloc = std::allocator<_Val> >
 class _Rb_tree
 {
+	/*
+		allocatorを再指定している。
+		今回の場合はnode型の_Rb_tree_node<_Val>型に。
+		rebindはstructでotherがallocatorになってくれる。
+	*/
 	typedef typename _Alloc::template
 		rebind<_Rb_tree_node<_Val> >::other _Node_allocator;
 
@@ -268,9 +291,11 @@ public:
 	typedef _Alloc					allocator_type;
 	typedef _Compare				key_compare;
 
-	// struct _Alloc_node
 
 protected:
+
+	// alloc_helper
+
 	_Link_type _M_get_node() {
 		return _M_node_alloc.allocate(1);
 	}
@@ -321,8 +346,10 @@ protected:
 		return __tmp;
 	}
 
-	// struct _Rb_tree_impl
 private:
+
+	// struct _Rb_tree_impl
+
 	_Link_type _M_header;
 	size_type _M_node_count;
 	key_compare _M_key_compare;
@@ -382,6 +409,14 @@ public:
 	typedef ft::reverse_iterator<const_iterator>	const_reverse_iterator;
 
 	// constructor/destructor
+
+/*
+	_M_headerは番兵ノード
+	番兵ノードのparentはROOT
+	番兵ノードの左はbegin()
+	番兵ノードの右はend()-1
+	番兵ノードがend()
+*/
 
 	_Rb_tree() : _M_key_compare(key_compare()), _M_node_alloc(_Node_allocator()) {
 		_M_header = _M_create_node(value_type());
