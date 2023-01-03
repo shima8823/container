@@ -252,10 +252,11 @@ class _Rb_tree
 	typedef typename _Alloc::template
 		rebind<_Rb_tree_node<_Val> >::other _Node_allocator;
 
-  protected:
+protected:
 	typedef _Rb_tree_node<_Val>*		_Link_type;
 	typedef const _Rb_tree_node<_Val>*	_Const_Link_type;
-  public:
+
+public:
 	typedef _Key					key_type;
 	typedef _Val					value_type;
 	typedef value_type*				pointer;
@@ -269,7 +270,7 @@ class _Rb_tree
 
 	// struct _Alloc_node
 
-  protected:
+protected:
 	_Link_type _M_get_node() {
 		return _M_node_alloc.allocate(1);
 	}
@@ -321,13 +322,13 @@ class _Rb_tree
 	}
 
 	// struct _Rb_tree_impl
-  private:
+private:
 	_Link_type _M_header;
 	size_type _M_node_count;
 	key_compare _M_key_compare;
 	_Node_allocator _M_node_alloc;
 
-  protected:
+protected:
 
 	// helper
 
@@ -374,13 +375,11 @@ class _Rb_tree
 		return __x;
 	}
 
-  public:
+public:
 	typedef _Rb_tree_iterator<value_type>			iterator;
 	typedef _Rb_tree_const_iterator<value_type>		const_iterator;
 	typedef ft::reverse_iterator<iterator>			reverse_iterator;
 	typedef ft::reverse_iterator<const_iterator>	const_reverse_iterator;
-
-  public:
 
 	// constructor/destructor
 
@@ -573,7 +572,7 @@ class _Rb_tree
 
 	_Compare key_comp() const {return _M_key_compare;}
 
-  private:
+private:
 
 	iterator _M_insert_(_Link_type __x, _Link_type __p, const value_type &__v) {
 		bool __insert_left = (__x != 0 || __p == _M_end()
