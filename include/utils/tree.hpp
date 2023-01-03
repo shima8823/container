@@ -5,6 +5,7 @@
 
 #include "algorithm.hpp"
 #include "iterator.hpp"
+#include "reverse_iterator.hpp"
 #include "pair.hpp"
 
 namespace ft
