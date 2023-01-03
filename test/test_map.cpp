@@ -281,6 +281,8 @@ static void swapTest() {
 		int_map m2;
 		m1.insert(ft::make_pair(42, "42")); m1.insert(ft::make_pair(-42, "-42"));
 		m2.insert(ft::make_pair(21, "m2!!"));
+		printMap(m1);
+		printMap(m2);
 		m1.swap(m2);
 		printMap(m1);
 		printMap(m2);
@@ -544,7 +546,48 @@ static void value_compTest() {
 }
 
 static void nonmember_operatorTest() {
-	
+	printTitle("nonmember_operator");
+	ft::map<int, char> alice;
+	alice[1] = 'a'; alice[2] = 'b'; alice[3] = 'c';
+	ft::map<int, char> bob;
+	bob[7] = 'Z'; bob[8] = 'Y'; bob[9] = 'X'; bob[10] = 'W';
+	ft::map<int, char> eve;
+	eve[1] = 'a'; eve[2] = 'b'; eve[3] = 'c';
+
+	std::cout << std::boolalpha;
+
+	// Compare non equal containers
+	std::cout << "alice == bob returns "; printBool(alice == bob);
+	std::cout << "alice != bob returns "; printBool(alice != bob);
+	std::cout << "alice <  bob returns "; printBool(alice < bob);
+	std::cout << "alice <= bob returns "; printBool(alice <= bob);
+	std::cout << "alice >  bob returns "; printBool(alice > bob);
+	std::cout << "alice >= bob returns "; printBool(alice >= bob);
+
+	std::cout << '\n';
+
+	// Compare equal containers
+	std::cout << "alice == eve returns "; printBool(alice == eve);
+	std::cout << "alice != eve returns "; printBool(alice != eve);
+	std::cout << "alice <  eve returns "; printBool(alice < eve);
+	std::cout << "alice <= eve returns "; printBool(alice <= eve);
+	std::cout << "alice >  eve returns "; printBool(alice > eve);
+	std::cout << "alice >= eve returns "; printBool(alice >= eve);
+}
+
+static void nonmember_swapTest() {
+	printTitle("nonmember_swap");
+	{
+		int_map m1;
+		int_map m2;
+		m1.insert(ft::make_pair(42, "42")); m1.insert(ft::make_pair(-42, "-42"));
+		m2.insert(ft::make_pair(21, "m2!!"));
+		printMap(m1);
+		printMap(m2);
+		std::swap(m1, m2);
+		printMap(m1);
+		printMap(m2);
+	}
 }
 
 void mapTest() {
@@ -584,7 +627,7 @@ void mapTest() {
 
 	// Non-member functions
 	nonmember_operatorTest();
-
+	nonmember_swapTest();
 
 	// value_compareTest();
 	// operator_equalTest();
