@@ -218,9 +218,15 @@ public:
 		if (new_size > capacity())
 			reserve(recommend(new_size));
 		pointer new_pos = _first + offset;
-		while (new_size > size())
-			construct(_last++);
+		// 未初期化のもの埋めていく。_lastもずらす。
+		if (new_size > size()) {
+			std::uninitialized_fill_n(_last, new_size - size(), value);
+			_last += new_size - size();
+		}
+		// new_pos ~ _last - count を _last に 後ろから詰めていく。
+		// イメージはtest_vectorの335 から337がいい例。
 		std::copy_backward(new_pos, _last - count, _last);
+		// new_pos ~ new_pos + count まで valueで詰める。
 		std::fill(new_pos, new_pos + count, value);
 	}
 	template< class InputIt >
@@ -233,8 +239,10 @@ public:
 		if (new_size > capacity())
 			reserve(recommend(new_size));
 		pointer new_pos = _first + offset;
-		while (new_size > size())
-			construct(_last++);
+		if (new_size > size()) {
+			std::uninitialized_fill_n(_last, new_size - size(), *first);
+			_last += new_size - size();
+		}
 		std::copy_backward(new_pos, _last - count, _last);
 		std::copy(first, last, new_pos);
 	}

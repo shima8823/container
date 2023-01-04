@@ -29,7 +29,7 @@ public:
 
 	template< class U >
 	wrap_iter& operator=(const ft::wrap_iter<U>& other) {
-		if (this == &other)
+		if (this->base() == other.base())
 			return *this;
 		_current = other.base();
 		return *this;
@@ -55,10 +55,22 @@ public:
 };
 
 // non member functions
+template< class Iterator >
+bool operator==( const ft::wrap_iter<Iterator>& lhs,
+				const ft::wrap_iter<Iterator>& rhs ) {
+	return lhs.base() == rhs.base();
+}
+
 template< class Iterator1, class Iterator2 >
 bool operator==( const ft::wrap_iter<Iterator1>& lhs,
 				const ft::wrap_iter<Iterator2>& rhs ) {
 	return lhs.base() == rhs.base();
+}
+
+template< class Iterator >
+bool operator!=( const ft::wrap_iter<Iterator>& lhs,
+				const ft::wrap_iter<Iterator>& rhs ) {
+	return lhs.base() != rhs.base();
 }
 
 template< class Iterator1, class Iterator2 >
@@ -91,19 +103,19 @@ bool operator>=( const ft::wrap_iter<Iterator1>& lhs,
 	return lhs.base() >= rhs.base();
 }
 
-template< class Iter >
-ft::wrap_iter<Iter>
-operator+( typename ft::wrap_iter<Iter>::difference_type n,
-			const ft::wrap_iter<Iter>& it )
+template< class Iterator1 >
+ft::wrap_iter<Iterator1>
+operator+( typename ft::wrap_iter<Iterator1>::difference_type n,
+			 ft::wrap_iter<Iterator1>& it )
 {
 	it += n;
 	return it;
 }
 
-template< class Iterator >
-typename ft::wrap_iter<Iterator>::difference_type
-operator-( const ft::wrap_iter<Iterator>& lhs,
-			const ft::wrap_iter<Iterator>& rhs )
+template< class Iterator1, class Iterator2 >
+typename ft::wrap_iter<Iterator1>::difference_type
+operator-( const ft::wrap_iter<Iterator1>& lhs,
+			const ft::wrap_iter<Iterator2>& rhs )
 {
 	return lhs.base() - rhs.base();
 }

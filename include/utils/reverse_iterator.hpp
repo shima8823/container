@@ -101,10 +101,10 @@ operator+( typename ft::reverse_iterator<Iter>::difference_type n,
 	return ft::reverse_iterator<Iter>(it.base() - n);
 }
 
-template< class Iterator >
-typename ft::reverse_iterator<Iterator>::difference_type
-operator-( const ft::reverse_iterator<Iterator>& lhs,
-			const ft::reverse_iterator<Iterator>& rhs )
+template< class Iterator1, class Iterator2 >
+typename ft::reverse_iterator<Iterator1>::difference_type
+operator-( const ft::reverse_iterator<Iterator1>& lhs,
+			const ft::reverse_iterator<Iterator2>& rhs )
 {
 	return rhs.base() - lhs.base();
 }
