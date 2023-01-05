@@ -628,6 +628,11 @@ public:
 
 private:
 
+	/// @brief インサート位置にインサートしてあげる。
+	/// @param __x 実際の挿入位置
+	/// @param __p __xの親
+	/// @param __v 挿入するpair
+	/// @return 新しいノードのイテレーター
 	iterator _M_insert_(_Link_type __x, _Link_type __p, const value_type &__v) {
 		bool __insert_left = (__x != 0 || __p == _M_end()
 					|| _M_key_compare(_KeyOfValue()(__v), _S_key(__p)));
@@ -679,7 +684,6 @@ private:
 	}
 
 	void _M_erase(_Link_type __x) {
-		// Erase without rebalancing.
 		while (__x != 0) {
 			_M_erase(_S_right(__x));
 			_Link_type __y = _S_left(__x);
@@ -724,18 +728,24 @@ private:
 		return const_iterator(__y);
 	}
 
+	/// @brief 挿入する位置を探す。
+	/// @param __k 新しいノードのキーの値
+	/// @return __x 実際の挿入位置 __y __xの親
 	ft::pair<_Link_type, _Link_type> _M_get_insert_unique_pos(const key_type &__k) {
 		typedef pair<_Link_type, _Link_type> _Res;
 		_Link_type __x = _M_begin();
 		_Link_type __y = _M_end();
 		bool __comp = true;
 		while (__x != 0) {
+			//何か存在していたら
 			__y = __x;
 			__comp = _M_key_compare(__k, _S_key(__x));
+			//比較して左辺が小さければ左側に。
 			__x = __comp ? __x->_M_left : __x->_M_right;
 		}
 		iterator __j = iterator(__y);
 		if (__comp) {
+			// 最初のinsert と 挿入する位置がbeginの場合
 			if (__j == begin())
 				return _Res(__x, __y);
 			else
@@ -743,57 +753,56 @@ private:
 		}
 		if (_M_key_compare(_S_key(__j._M_node), __k))
 			return _Res(__x, __y);
-		return _Res(__j._M_node, 0);
+		return _Res(__j._M_node, 0); // 同じキーを挿入しようとする時
 	}
 
+	/// @brief __positionからどこに挿入するか決める。
+	/// @param __position 挿入位置
+	/// @param __k key
+	/// @return pair<挿入位置, 挿入位置の親>
 	pair<_Link_type, _Link_type> _M_get_insert_hint_unique_pos(const_iterator __position, const key_type& __k) {
 		iterator __pos = __position._M_const_cast();
 		typedef pair<_Link_type, _Link_type> _Res;
 
-		// end()
 		if (__pos._M_node == _M_end())
 		{
-			if (size() > 0
-				&& _M_key_compare(_S_key(_M_rightmost()), __k))
-				return _Res(0, _M_rightmost());
+			if (size() > 0 && _M_key_compare(_S_key(_M_rightmost()), __k))
+				return _Res(0, _M_rightmost()); // kが一番大きいなら。
 			else
 				return _M_get_insert_unique_pos(__k);
 		}
 		else if (_M_key_compare(__k, _S_key(__pos._M_node)))
 		{
-			// First, try before...
 			iterator __before = __pos;
-			if (__pos._M_node == _M_leftmost()) // begin()
-				return _Res(_M_leftmost(), _M_leftmost());
+			if (__pos._M_node == _M_leftmost()) // もしbegin()だったら
+				return _Res(_M_leftmost(), _M_leftmost()); // 確定で左
 			else if (_M_key_compare(_S_key((--__before)._M_node), __k))
 			{
 				if (_S_right(__before._M_node) == 0)
-					return _Res(0, __before._M_node);
+					return _Res(0, __before._M_node); // 親を返す
 				else
-					return _Res(__pos._M_node, __pos._M_node);
+					return _Res(__pos._M_node, __pos._M_node); //
 			}
 			else
-				return _M_get_insert_unique_pos(__k);
+				return _M_get_insert_unique_pos(__k); // 見つからなければ最初から探す。
 		}
 		else if (_M_key_compare(_S_key(__pos._M_node), __k))
 		{
-			// ... then try after.
 			iterator __after = __pos;
 			if (__pos._M_node == _M_rightmost())
 				return _Res(0, _M_rightmost());
 			else if (_M_key_compare(__k, _S_key((++__after)._M_node)))
 			{
 				if (_S_right(__pos._M_node) == 0)
-					return _Res(0, __pos._M_node);
+					return _Res(0, __pos._M_node); //
 				else
-					return _Res(__after._M_node, __after._M_node);
+					return _Res(__after._M_node, __after._M_node); //
 			}
 			else
 				return _M_get_insert_unique_pos(__k);
 		}
 		else
-		// Equivalent keys.
-		return _Res(__pos._M_node, 0);
+			return _Res(__pos._M_node, 0); // 重複
 	}
 
 	void _M_erase_aux(const_iterator __position)
@@ -833,89 +842,100 @@ private:
 
 	// tree.cc
 
+	/// @brief 回転
+	/// @param __x 実際の挿入するノードの親
+	/// @param __root root
 	static void local_Rb_tree_rotate_left(_Link_type const __x,
 										_Link_type& __root) {
 		_Link_type const __y = __x->_M_right;
 
 		__x->_M_right = __y->_M_left;
-		if (__y->_M_left !=0)
-		__y->_M_left->_M_parent = __x;
+		if (__y->_M_left != 0)
+			__y->_M_left->_M_parent = __x;
 		__y->_M_parent = __x->_M_parent;
 
 		if (__x == __root)
-		__root = __y;
+			__root = __y;
 		else if (__x == __x->_M_parent->_M_left)
-		__x->_M_parent->_M_left = __y;
+			__x->_M_parent->_M_left = __y;
 		else
-		__x->_M_parent->_M_right = __y;
+			__x->_M_parent->_M_right = __y;
 		__y->_M_left = __x;
 		__x->_M_parent = __y;
 	}
 
+	/// @brief 回転
+	/// @param __x 実際の挿入するノードの親
+	/// @param __root root
 	static void local_Rb_tree_rotate_right(_Link_type const __x,
 										_Link_type& __root) {
 		_Link_type const __y = __x->_M_left;
 
 		__x->_M_left = __y->_M_right;
 		if (__y->_M_right != 0)
-		__y->_M_right->_M_parent = __x;
+			__y->_M_right->_M_parent = __x;
 		__y->_M_parent = __x->_M_parent;
 
 		if (__x == __root)
-		__root = __y;
+			__root = __y;
 		else if (__x == __x->_M_parent->_M_right)
-		__x->_M_parent->_M_right = __y;
+			__x->_M_parent->_M_right = __y;
 		else
-		__x->_M_parent->_M_left = __y;
+			__x->_M_parent->_M_left = __y;
 		__y->_M_right = __x;
 		__x->_M_parent = __y;
 	}
 
-
+	/// @brief 実際にインサートをしてみて、ルールに違反していたら回転。
+	/// @param __insert_left 左にインサートするかどうか
+	/// @param __x 挿入したい新しいノード
+	/// @param __p 挿入したい位置の親
+	/// @param __header header(end())
 	void _Rb_tree_insert_and_rebalance(const bool __insert_left,
 									_Link_type __x,
 									_Link_type __p,
 									_Link_type& __header) throw () {
 		_Link_type & __root = __header->_M_parent;
 
-		// Initialize fields in new node to insert.
+		// 挿入する新しいノードの初期化
 		__x->_M_parent = __p;
 		__x->_M_left = 0;
 		__x->_M_right = 0;
 		__x->_M_color = _S_red;
 
-		// Insert.
-		// Make new node child of parent and maintain root, leftmost and
-		// rightmost nodes.
-		// N.B. First node is always inserted left.
+		// 挿入してみる。
+		// 新しいノードを親の子にして、ルート、左端、および右端のノードを維持する
+		// 最初のノードは常に左に挿入される
 		if (__insert_left) {
-			__p->_M_left = __x; // also makes leftmost = __x when __p == &__header
+			__p->_M_left = __x; // また、__p == &__headerのとき、leftmost = __xとする
 
+			// 初めてinsertされる時 true
 			if (__p == __header) {
 				__header->_M_parent = __x;
 				__header->_M_right = __x;
 			}
 			else if (__p == __header->_M_left)
-				__header->_M_left = __x; // maintain leftmost pointing to min node
+				__header->_M_left = __x; // 番兵の左端がMinノードを指すようにする
 		} else {
 			__p->_M_right = __x;
 
 			if (__p == __header->_M_right)
-				__header->_M_right = __x; // maintain rightmost pointing to max node
+				__header->_M_right = __x; // 右端が最大ノードを指すようにする
 		}
 		// Rebalance.
+		// 初めては入らない。
 		while (__x != __root && __x->_M_parent->_M_color == _S_red) {
-			_Link_type const __xpp = __x->_M_parent->_M_parent;
+			_Link_type const __xpp = __x->_M_parent->_M_parent; // xpp = 祖父
 
-			if (__x->_M_parent == __xpp->_M_left) {
-				_Link_type const __y = __xpp->_M_right;
-				if (__y && __y->_M_color == _S_red) {
+			if (__x->_M_parent == __xpp->_M_left) { // 祖父の左が親なら
+				_Link_type const __y = __xpp->_M_right; // y = 叔父
+				if (__y && __y->_M_color == _S_red) { 
 					__x->_M_parent->_M_color = _S_black;
 					__y->_M_color = _S_black;
 					__xpp->_M_color = _S_red;
 					__x = __xpp;
 				} else {
-					if (__x == __x->_M_parent->_M_right) {
+					if (__x == __x->_M_parent->_M_right) { // 右の子なら
 						__x = __x->_M_parent;
 						local_Rb_tree_rotate_left(__x, __root);
 					}
