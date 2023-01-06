@@ -749,11 +749,11 @@ private:
 			if (__j == begin())
 				return _Res(__x, __y);
 			else
-				--__j;
+				--__j; //
 		}
 		if (_M_key_compare(_S_key(__j._M_node), __k))
 			return _Res(__x, __y);
-		return _Res(__j._M_node, 0); // 同じキーを挿入しようとする時
+		return _Res(__j._M_node, 0); // 重複
 	}
 
 	/// @brief __positionからどこに挿入するか決める。
