@@ -3,6 +3,7 @@
 typedef ft::map<int, std::string> int_map;
 
 // printSubTitleの(1)などの数字はcppreferenceの関数番号に対応している
+// ● = red ○ = black
 
 static void constructorTest() {
 	printTitle("constructor");
@@ -47,6 +48,11 @@ static void assignTest() {
 		int_map m;
 		printMap(m);
 		m = input_map;
+		printMap(m);
+		int_map input_map2;
+		input_map2[10] = "ten";
+		input_map2[9] = "nine";
+		m = input_map2;
 		printMap(m);
 	}
 }
@@ -251,11 +257,135 @@ static void clearTest() {
 static void insertTest() {
 	printTitle("insert");
 	{
+		printSubTitle("(1)");
+
+		ft::pair<int_map::iterator, bool> res;
 		int_map m;
-		
-		m.insert(ft::make_pair(10, "hello"));
+		res = m.insert(ft::make_pair(10, "hello"));
 		printMap(m);
-		m.insert(ft::make_pair(-2, "bye"));
+		std::cout << "(*res.first).first = [" << (*res.first).first << "]" << std::endl;
+		std::cout << "(*res.first).first = [" << (*res.first).second << "]" << std::endl;
+		printBool(res.second);
+		/*
+				○
+		*/
+		res = m.insert(ft::make_pair(2, "bye"));
+		printMap(m);
+		std::cout << "(*res.first).first = [" << (*res.first).first << "]" << std::endl;
+		std::cout << "(*res.first).first = [" << (*res.first).second << "]" << std::endl;
+		printBool(res.second);
+		/*
+				○
+			●
+		*/
+		res = m.insert(ft::make_pair(4, "bye"));
+		printMap(m);
+		std::cout << "(*res.first).first = [" << (*res.first).first << "]" << std::endl;
+		std::cout << "(*res.first).first = [" << (*res.first).second << "]" << std::endl;
+		printBool(res.second);
+		/* 叔父が黒 + new_nodeが親の右の子
+				○		   4
+			●		→	
+				4		  ●	●
+		*/
+		res = m.insert(ft::make_pair(15, "bye"));
+		printMap(m);
+		std::cout << "(*res.first).first = [" << (*res.first).first << "]" << std::endl;
+		std::cout << "(*res.first).first = [" << (*res.first).second << "]" << std::endl;
+		printBool(res.second);
+		/*	叔父ノードが赤色
+				○			    	○
+			●		●	->	   ○		○
+						15						15
+		*/
+		int_map m2;
+		m2[20] = "twenty"; m2[10] = "ten";
+		res = m2.insert(ft::make_pair(5, "five"));
+		printMap(m2);
+		std::cout << "(*res.first).first = [" << (*res.first).first << "]" << std::endl;
+		std::cout << "(*res.first).first = [" << (*res.first).second << "]" << std::endl;
+		printBool(res.second);
+		/*	叔父が黒 + new_nodeが親の左の子
+					○			    ○
+				●		->	   5		●
+			5						
+		*/
+		res = m2.insert(ft::make_pair(13, "five"));
+		printMap(m2);
+		std::cout << "(*res.first).first = [" << (*res.first).first << "]" << std::endl;
+		std::cout << "(*res.first).first = [" << (*res.first).second << "]" << std::endl;
+		printBool(res.second);
+		// --j
+	
+		res = m2.insert(ft::make_pair(20, "bye"));
+		printMap(m2);
+		std::cout << "(*res.first).first = [" << (*res.first).first << "]" << std::endl;
+		std::cout << "(*res.first).first = [" << (*res.first).second << "]" << std::endl;
+		printBool(res.second);
+		// falseの時
+	}
+	{
+		printSubTitle("(4)");
+
+		int_map::iterator res;
+		int_map m;
+		res = m.insert(m.end(), ft::make_pair(0, "zero"));
+		printMap(m);
+		std::cout << "(*res).first = [" << (*res).first << "]" << std::endl;
+		std::cout << "(*res).second = [" << (*res).second << "]" << std::endl;
+
+		m[2] = "two"; m[40] = "fourty one";
+		int_map::iterator it = m.begin();
+		it++;
+		res = m.insert(it, ft::make_pair(42, "fourty two"));
+		printMap(m);
+		std::cout << "(*res).first = [" << (*res).first << "]" << std::endl;
+		std::cout << "(*res).second = [" << (*res).second << "]" << std::endl;
+
+		// _Res(__after._M_node, __after._M_node);
+		res = m.insert(it, ft::make_pair(3, "three"));
+		printMap(m);
+		std::cout << "(*res).first = [" << (*res).first << "]" << std::endl;
+		std::cout << "(*res).second = [" << (*res).second << "]" << std::endl;
+	
+		// _Res(0, __pos._M_node);
+		res = m.insert(++it, ft::make_pair(10, "ten"));
+		printMap(m);
+		std::cout << "(*res).first = [" << (*res).first << "]" << std::endl;
+		std::cout << "(*res).second = [" << (*res).second << "]" << std::endl;
+
+		res = m.insert(m.end(), ft::make_pair(100, "one hun"));
+		printMap(m);
+		std::cout << "(*res).first = [" << (*res).first << "]" << std::endl;
+		std::cout << "(*res).second = [" << (*res).second << "]" << std::endl;
+
+		// _Res(__pos._M_node, __pos._M_node);
+		res = m.insert(--(m.end()), ft::make_pair(70, "seventy"));
+		printMap(m);
+		std::cout << "(*res).first = [" << (*res).first << "]" << std::endl;
+		std::cout << "(*res).second = [" << (*res).second << "]" << std::endl;
+
+		int_map m2;
+		res = m2.insert(m2.begin(), ft::make_pair(100, "^-^"));
+		res = m2.insert(m2.begin(), ft::make_pair(50, "^-^"));
+		res = m2.insert(m2.begin(), ft::make_pair(25, "^-^"));
+		res = m2.insert(m2.begin(), ft::make_pair(150, "^-^"));
+		res = m2.insert(m2.begin(), ft::make_pair(37, "^-^"));
+		res = m2.insert(m2.begin(), ft::make_pair(13, "^-^"));
+		// _Res(0, __before._M_node);
+		res = m2.insert((++(++(++(m2.begin())))), ft::make_pair(40, "^-^"));
+		printMap(m2);
+		std::cout << "(*res).first = [" << (*res).first << "]" << std::endl;
+		std::cout << "(*res).second = [" << (*res).second << "]" << std::endl;
+	}
+	{
+		printSubTitle("(7)");
+
+		int_map input_map;
+		input_map[-10] = "negative ten"; input_map[3] = "three"; input_map[104] = "one hundred four";
+		int_map m;
+		m[0] = "zero"; m[2] = "two"; m[4] = "four";
+		m.insert(input_map.begin(), input_map.end());
 		printMap(m);
 	}
 }
@@ -263,10 +393,32 @@ static void insertTest() {
 static void eraseTest() {
 	printTitle("erase");
 	{
+		printSubTitle("(1)");
+
 		int_map m;
-		
-		m.insert(ft::make_pair(10, "hello"));
+		m[0] = "zero"; m[2] = "two"; m[4] = "four";
 		printMap(m);
+		int_map::iterator it = m.begin();
+		it++; // it == 2
+		m.erase(it);
+		printMap(m);
+	}
+	{
+		printSubTitle("(2)");
+
+		int_map m;
+		m[0] = "zero"; m[2] = "two"; m[4] = "four"; m[6] = "six";
+		printMap(m);
+		int_map::iterator it = m.begin();
+		it++; // it == 2
+		m.erase(it, m.end());
+		printMap(m);
+	}
+	{
+		printSubTitle("(3)");
+
+		int_map m;
+		m.insert(ft::make_pair(10, "hello"));
 		m.insert(ft::make_pair(-2, "bye"));
 		printMap(m);
 		m.erase(-2);
