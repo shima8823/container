@@ -6,23 +6,26 @@
 #define MAGENTA	"\033[35m"
 #define WHITE	"\033[37m"
 #define CYAN	"\033[36m"
+#define GREEN	"\033[32m"
 
 #if ISSTL
 	#include <vector>
 	#include <map>
+	#include <stack>
 	namespace ft = std;
 #else
 	#include <vector.hpp>
 	#include <map.hpp>
+	#include <stack.hpp>
 #endif
 
 typedef ft::vector<int> int_vector;
 
 // utils.cpp
+void printContainerTitle(std::string s);
 void printTitle(std::string s);
 void printSubTitle(std::string s);
 void printBool(bool b);
-
 
 template<class T>
 void printVector(T& v) {
@@ -57,5 +60,8 @@ void vectorTest();
 
 // test_map.cpp
 void mapTest();
+
+// test_stack.cpp
+void stackTest();
 
 #endif
