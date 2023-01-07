@@ -542,7 +542,6 @@ public:
 			__t._M_root()->_M_parent = __t._M_end();
 			std::swap(_M_node_count, __t._M_node_count);
 		}
-		// No need to swap header's color as it does not change.
 		std::swap(_M_key_compare, __t._M_key_compare);
 		std::swap(_M_node_alloc, __t._M_node_alloc);
 	}
@@ -644,9 +643,12 @@ private:
 		return iterator(__z);
 	}
 
+	/// @brief 木の構造をコピーする
+	/// @param __x コピー開始ノード
+	/// @param __p xの親
+	/// @return コピーしたノードのroot
 	_Link_type _M_copy(_Link_type __x, _Link_type __p)
 	{
-		// Structural copy. __x and __p must be non-null.
 		_Link_type __top = _M_clone_node(__x);
 		__top->_M_parent = __p;
 
@@ -695,7 +697,7 @@ private:
 	iterator _M_lower_bound(_Link_type x, _Link_type y, const _Key& k) {
 		while (x != 0)
 			if (!_M_key_compare(_S_key(x), k))
-				y = x, x= x->_M_left;
+				y = x, x = x->_M_left;
 			else
 				x = _S_right(x);
 		return iterator(y);
@@ -704,28 +706,28 @@ private:
 	const_iterator _M_lower_bound(_Const_Link_type x, _Const_Link_type y, const _Key& k) const {
 		while (x != 0)
 			if (!_M_key_compare(_S_key(x), k))
-				y = x, x= x->_M_left;
+				y = x, x = x->_M_left;
 			else
 				x = _S_right(x);
 		return const_iterator(y);
 	}
 
-	iterator _M_upper_bound(_Link_type __x, _Link_type __y, const _Key& __k) {
-		while (__x != 0)
-			if (_M_key_compare(__k, _S_key(__x)))
-				__y = __x, __x = _S_left(__x);
+	iterator _M_upper_bound(_Link_type x, _Link_type y, const _Key& k) {
+		while (x != 0)
+			if (_M_key_compare(k, _S_key(x)))
+				y = x, x = _S_left(x);
 			else
-				__x = _S_right(__x);
-		return iterator(__y);
+				x = _S_right(x);
+		return iterator(y);
 	}
 
-	const_iterator _M_upper_bound(_Const_Link_type __x, _Const_Link_type __y, const _Key& __k) const {
-		while (__x != 0)
-			if (_M_key_compare(__k, _S_key(__x)))
-				__y = __x, __x = _S_left(__x);
+	const_iterator _M_upper_bound(_Const_Link_type x, _Const_Link_type y, const _Key& k) const {
+		while (x != 0)
+			if (_M_key_compare(k, _S_key(x)))
+				y = x, x = _S_left(x);
 			else
-				__x = _S_right(__x);
-		return const_iterator(__y);
+				x = _S_right(x);
+		return const_iterator(y);
 	}
 
 	/// @brief 挿入する位置を探す。
