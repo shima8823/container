@@ -396,32 +396,136 @@ static void eraseTest() {
 		printSubTitle("(1)");
 
 		int_map m;
+		int_map::iterator it;
+		
+		m.clear();
 		m[0] = "zero"; m[2] = "two"; m[4] = "four";
 		printMap(m);
-		int_map::iterator it = m.begin();
-		it++; // it == 2
-		m.erase(it);
+		it = m.begin();
+		m.erase(it);  // it == m[0]
+		printMap(m);
+
+		m.clear();
+		m[0] = "zero"; m[2] = "two"; m[4] = "four";
+		printMap(m);
+		it = m.find(4);
+		m.erase(it);  // it == m[4]
+		printMap(m);
+
+		m.clear();
+		m[2] = "two";
+		printMap(m);
+		it = m.find(2);
+		m.erase(it);  // it == m[2]
+		printMap(m);
+
+		m.clear();
+		m[2] = "two";m[0] = "zero";
+		printMap(m);
+		it = m.find(2);
+		m.erase(it);  // it == m[2]
+		printMap(m);
+
+		m.clear();
+		m[2] = "two";m[3] = "three";
+		printMap(m);
+		it = m.find(2);
+		m.erase(it);  // it == m[2]
+		printMap(m);
+
+		// 削除するノードの子が2個
+		m.clear();
+		m[0] = "zero"; m[2] = "two"; m[4] = "four";
+		printMap(m);
+		it = m.find(2);
+		m.erase(it); // it == m[2]
+		printMap(m);
+
+		m.clear();
+		m[0] = "zero"; m[2] = "two"; m[4] = "four"; m[3] = "three";
+		printMap(m);
+		it = m.find(2);
+		m.erase(it); // it == m[2]
+		printMap(m);
+
+		m.clear();
+		m[0] = "zero"; m[2] = "two"; m[10] = "ten"; m[3] = "three";
+		printMap(m);
+		it = m.find(2);
+		m.erase(it); // it == m[2]
+		printMap(m);
+
+		m.clear();
+		m[500] = "";m[250] = "";m[750] = ""; m[125] = "";m[625] = "";m[375] = "";m[1000] = "";
+		printMap(m);
+		it = m.find(250);
+		m.erase(it); // it == m[250]
+		printMap(m);
+
+		m.clear();
+		m[500] = "";m[250] = "";m[750] = ""; m[125] = "";m[625] = "";m[375] = "";m[1000] = "";m[1200] = "";m[690] = "";
+		printMap(m);
+		it = m.find(500);
+		m.erase(it); // it == m[500]
+		printMap(m);
+
+		m.clear();
+		m[500] = "";m[250] = "";m[750] = ""; m[125] = "";m[625] = "";m[375] = "";m[1000] = "";m[1200] = "";
+		printMap(m);
+		it = m.find(625);
+		m.erase(it); // it == m[625]
+		printMap(m);
+
+		m.clear();
+		m[500] = "";m[250] = "";m[750] = ""; m[125] = "";m[625] = "";m[375] = "";m[1000] = "";m[1200] = "";
+		m.erase(m.find(1200));m.erase(m.find(125));m.erase(m.find(375));
+		printMap(m);
+		m.erase(m.find(250));
+		printMap(m);
+
+		m.clear(); // 目で確認
+		m[500] = "";m[250] = "";m[750] = ""; m[125] = "";m[625] = "";m[375] = "";m[1000] = "";m[800] = "";
+		printMap(m);
+		it = m.find(625);
+		m.erase(it); // it == m[625]
 		printMap(m);
 	}
 	{
 		printSubTitle("(2)");
-
 		int_map m;
+
+		m.clear();
 		m[0] = "zero"; m[2] = "two"; m[4] = "four"; m[6] = "six";
 		printMap(m);
-		int_map::iterator it = m.begin();
-		it++; // it == 2
-		m.erase(it, m.end());
+		m.erase(m.find(2), m.end());
+		printMap(m);
+
+		m.clear();
+		m[0] = "zero"; m[2] = "two"; m[4] = "four"; m[6] = "six";
+		printMap(m);
+		m.erase(m.begin(), m.end());
 		printMap(m);
 	}
 	{
 		printSubTitle("(3)");
-
 		int_map m;
-		m.insert(ft::make_pair(10, "hello"));
-		m.insert(ft::make_pair(-2, "bye"));
+
+		m.clear();
+		m[0] = "zero"; m[2] = "two"; m[4] = "four"; m[6] = "six";
 		printMap(m);
-		m.erase(-2);
+		m.erase(2);
+		printMap(m);
+
+		m.clear();
+		m[0] = "zero"; m[2] = "two"; m[4] = "four"; m[6] = "six";m[5] = "five";
+		printMap(m);
+		m.erase(4);
+		printMap(m);
+
+		m.clear();
+		m[0] = "zero"; m[2] = "two"; m[4] = "four"; m[6] = "six";m[9] = "nine";
+		printMap(m);
+		m.erase(7);
 		printMap(m);
 	}
 }
