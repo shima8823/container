@@ -579,7 +579,7 @@ public:
 							_M_upper_bound(__xu, __yu, __k));
 			}
 		}
-		return pair<iterator, iterator>(iterator(__y), iterator(__y));
+		return pair<iterator, iterator>(iterator(__y), iterator(__y)); // 見つからなければ
 	}
 
 	pair<const_iterator, const_iterator> equal_range(const key_type& __k) const {
@@ -964,6 +964,10 @@ private:
 		__root->_M_color = _S_black;
 	}
 
+	/// @brief 削除して、ルールに合うようにrebalance。
+	/// @param __z 削除するノード
+	/// @param __header header
+	/// @return _Link_type 削除されるノード
 	_Link_type _Rb_tree_rebalance_for_erase(_Link_type const __z,
 					_Link_type& __header) throw ()
 	{
@@ -971,107 +975,109 @@ private:
 		_Link_type& __leftmost = __header->_M_left;
 		_Link_type& __rightmost = __header->_M_right;
 		_Link_type __y = __z;
-		_Link_type __x = 0;
+		_Link_type __x = 0; // yの子
 		_Link_type __x_parent = 0;
 
-		if (__y->_M_left == 0)     // __z has at most one non-null child. y == z.
-			__x = __y->_M_right;     // __x might be null.
+		// ノードの入れ替え
+		if (__y->_M_left == 0)  // y == z.  zの子は(1 || 0)個ある
+			__x = __y->_M_right;  // xはnullかも
 		else
-			if (__y->_M_right == 0)  // __z has exactly one non-null child. y == z.
-				__x = __y->_M_left;    // __x is not null.
-		else {
-			// __z has two non-null children.  Set __y to
-			__y = __y->_M_right;   //   __z's successor.  __x might be null.
-			while (__y->_M_left != 0)
-				__y = __y->_M_left;
-			__x = __y->_M_right;
-		}
-		if (__y != __z) {
-			// relink y in place of z.  y is z's successor
+			if (__y->_M_right == 0)  // y == z.  zの子は1個ある
+				__x = __y->_M_left;  // xは存在する子
+			else { // zの子は2個ある
+				__y = __y->_M_right; // __x might be null.
+				// 削除するノードの次に大きいノードを探す y = 次に大きいノード
+				while (__y->_M_left != 0)
+					__y = __y->_M_left;
+				__x = __y->_M_right;
+			}
+		if (__y != __z) { // 削除するノードの子が2個の場合
+			// zの代わりにyを繋げる。yはzの後継者
 			__z->_M_left->_M_parent = __y;
 			__y->_M_left = __z->_M_left;
-			if (__y != __z->_M_right) {
+			if (__y != __z->_M_right) { //448
 				__x_parent = __y->_M_parent;
-				if (__x)
+				if (__x) // 469
 					__x->_M_parent = __y->_M_parent;
-				__y->_M_parent->_M_left = __x;   // __y must be a child of _M_left
+				__y->_M_parent->_M_left = __x;
 				__y->_M_right = __z->_M_right;
 				__z->_M_right->_M_parent = __y;
 			}
 			else
-				__x_parent = __y;
+				__x_parent = __y; // 441
 			if (__root == __z)
-				__root = __y;
+				__root = __y; // 441
 			else if (__z->_M_parent->_M_left == __z)
-				__z->_M_parent->_M_left = __y;
+				__z->_M_parent->_M_left = __y; // 462
 			else
 				__z->_M_parent->_M_right = __y;
 			__y->_M_parent = __z->_M_parent;
 			std::swap(__y->_M_color, __z->_M_color);
 			__y = __z;
-			// __y now points to node to be actually deleted
-		} else { // __y == __z
+			// y が実際に削除されるノードを指すように
+		} else { // 削除するノードの子が0, 1個の場合
+			// ノードの接続の変更
 			__x_parent = __y->_M_parent;
 			if (__x)
-				__x->_M_parent = __y->_M_parent;
+				__x->_M_parent = __y->_M_parent; // 426
 			if (__root == __z)
-				__root = __x;
+				__root = __x; //419
 			else
-				if (__z->_M_parent->_M_left == __z)
-					__z->_M_parent->_M_left = __x;
-			else
-				__z->_M_parent->_M_right = __x;
-			if (__leftmost == __z) {
-				if (__z->_M_right == 0)        // __z->_M_left must be null also
-					__leftmost = __z->_M_parent;
-				// makes __leftmost == _M_header if __z == __root
+				if (__z->_M_parent->_M_left == __z) // zが左の子なら
+					__z->_M_parent->_M_left = __x; // 405
 				else
-					__leftmost = _S_minimum(__x);
+					__z->_M_parent->_M_right = __x; // 412
+
+			// 変数の更新
+			if (__leftmost == __z) {
+				if (__z->_M_right == 0)  // __z->_M_left もNULLでなければならない。leftmost == zだから。
+					__leftmost = __z->_M_parent; //405
+				// if __z == __root, __leftmost == _M_header 
+				else
+					__leftmost = _S_minimum(__x); // 433
 			}
 			if (__rightmost == __z) {
-				if (__z->_M_left == 0)         // __z->_M_right must be null also
-					__rightmost = __z->_M_parent;
-				// makes __rightmost == _M_header if __z == __root
-				else                      // __x == __z->_M_left
-					__rightmost = _S_maximum(__x);
+				if (__z->_M_left == 0)  // __z->_M_right もNULLでなければならない。rightmost == zだから。
+					__rightmost = __z->_M_parent; // 412
+				// if __z == __root, __rightmost == _M_header 
+				else  // __x == __z->_M_left
+					__rightmost = _S_maximum(__x); // 426
 			}
 		}
 		if (__y->_M_color != _S_red) {
 			while (__x != __root && (__x == 0 || __x->_M_color == _S_black))
-				if (__x == __x_parent->_M_left) {
-					_Link_type __w = __x_parent->_M_right;
-					if (__w->_M_color == _S_red) {
+				if (__x == __x_parent->_M_left) {  // 476
+					_Link_type __w = __x_parent->_M_right;  // sibling
+					if (__w->_M_color == _S_red) {  // 兄弟の色が赤の場合 483
 						__w->_M_color = _S_black;
 						__x_parent->_M_color = _S_red;
 						local_Rb_tree_rotate_left(__x_parent, __root);
 						__w = __x_parent->_M_right;
 					}
-					if ((__w->_M_left == 0 ||
-						__w->_M_left->_M_color == _S_black) &&
-						(__w->_M_right == 0 ||
-						__w->_M_right->_M_color == _S_black))
+					if ((__w->_M_left == 0 || __w->_M_left->_M_color == _S_black)
+						&& (__w->_M_right == 0 || __w->_M_right->_M_color == _S_black))  // 兄弟の色が黒、兄弟の左右の子が黒の場合 483
 					{
 						__w->_M_color = _S_red;
 						__x = __x_parent;
 						__x_parent = __x_parent->_M_parent;
 					} else {
 						if (__w->_M_right == 0
-							|| __w->_M_right->_M_color == _S_black)
+							|| __w->_M_right->_M_color == _S_black)  // 兄弟の色が黒、兄弟の右の子が黒 490
 						{
 							__w->_M_left->_M_color = _S_black;
 							__w->_M_color = _S_red;
 							local_Rb_tree_rotate_right(__w, __root);
 							__w = __x_parent->_M_right;
 						}
+						// 兄弟の色が黒、兄弟の右の子が赤
 						__w->_M_color = __x_parent->_M_color;
 						__x_parent->_M_color = _S_black;
 						if (__w->_M_right)
-							__w->_M_right->_M_color = _S_black;
+							__w->_M_right->_M_color = _S_black; // 476
 						local_Rb_tree_rotate_left(__x_parent, __root);
 						break;
 					}
-				} else {
-					// same as above, with _M_right <-> _M_left.
+				} else {  // 逆
 					_Link_type __w = __x_parent->_M_left;
 					if (__w->_M_color == _S_red) {
 						__w->_M_color = _S_black;
@@ -1103,7 +1109,7 @@ private:
 					}
 				}
 			if (__x)
-				__x->_M_color = _S_black;
+				__x->_M_color = _S_black; // 426
 		}
 		return __y;
 	}
