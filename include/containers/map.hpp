@@ -23,7 +23,7 @@ public:
 	// 比較する関数オブジェクト
 	class value_compare : public std::binary_function<value_type, value_type, bool>
 	{
-		friend class map;
+		friend class map; // mapからアクセスするため。
 	protected:
 		Compare comp;
 		value_compare(Compare c) : comp(c) {}
@@ -83,14 +83,14 @@ public:
 	T& at( const Key& key ) {
 		iterator __i = lower_bound(key);
 		if (__i == end() || key_comp()(key, (*__i).first))
-			std::__throw_out_of_range("map::at");
+			throw std::out_of_range("map::at");
 		return (*__i).second;
 	}
 
 	const T& at( const Key& key ) const {
 		const_iterator __i = lower_bound(key);
 		if (__i == end() || key_comp()(key, (*__i).first))
-			std::__throw_out_of_range("map::at");
+			throw std::out_of_range("map::at");
 		return (*__i).second;
 	}
 
@@ -119,7 +119,7 @@ public:
 
 	void clear() {_M_t.clear();}
 
-	ft::pair<iterator,bool> insert (const value_type& val) {return _M_t._M_insert_unique(val);}
+	ft::pair<iterator,bool> insert(const value_type& val) {return _M_t._M_insert_unique(val);}
 	iterator insert(iterator pos, const value_type& val) {return _M_t._M_insert_unique_(pos, val);}
 	template< class InputIt >
 	void insert( InputIt first, InputIt last )
