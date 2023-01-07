@@ -49,11 +49,6 @@ static void assignTest() {
 		printMap(m);
 		m = input_map;
 		printMap(m);
-		int_map input_map2;
-		input_map2[10] = "ten";
-		input_map2[9] = "nine";
-		m = input_map2;
-		printMap(m);
 	}
 }
 
@@ -80,6 +75,16 @@ static void atTest() {
 		} catch (std::out_of_range) {
 			std::cout << "out_of_range" << '\n';
 		}
+		try {
+			m.at(0);
+		} catch (std::out_of_range) {
+			std::cout << "out_of_range" << '\n';
+		}
+		try {
+			m.at(INT_MAX);
+		} catch (std::out_of_range) {
+			std::cout << "out_of_range" << '\n';
+		}
 	}
 	{
 		printSubTitle("not const");
@@ -95,6 +100,16 @@ static void atTest() {
 		} catch (std::out_of_range) {
 			std::cout << "out_of_range" << '\n';
 		}
+		try {
+			m.at(0);
+		} catch (std::out_of_range) {
+			std::cout << "out_of_range" << '\n';
+		}
+		try {
+			m.at(INT_MAX);
+		} catch (std::out_of_range) {
+			std::cout << "out_of_range" << '\n';
+		}
 	}
 }
 
@@ -107,6 +122,12 @@ static void operatorBracketTest() {
 		int_map m(input_map);
 		std::cout << "m[-42] = [" << m[-42] << "]" << std::endl;
 		m[-42] = "42tokyo";
+		printMap(m);
+	}
+	{
+		int_map m;
+		m[-42] = "-42";
+		m[42] = "42tokyo";
 		printMap(m);
 	}
 }
@@ -540,8 +561,22 @@ static void swapTest() {
 		printMap(m1);
 		printMap(m2);
 		m1.swap(m2);
+		printMap(m1);	
+		printMap(m2);
+
+		m1.clear(); m2.clear();
+		m1.swap(m2);
 		printMap(m1);
 		printMap(m2);
+
+		m1.clear(); m2.clear();
+		m1[10] = "ten";
+		printMap(m1);
+		printMap(m2);
+		m1.swap(m2);
+		printMap(m1);
+		printMap(m2);
+
 	}
 }
 
@@ -568,6 +603,8 @@ static void findTest() {
 		std::cout << "(*it).second = [" << (*it).second << "]" << std::endl;
 		(*it).second = "new year";
 		printMap(m);
+		it = m.find(0);
+		printBool(it == m.end());
 		it = m.find(INT_MAX);
 		printBool(it == m.end());
 	}
@@ -579,6 +616,8 @@ static void findTest() {
 		std::cout << "(*it).first = [" << (*it).first << "]" << std::endl;
 		std::cout << "(*it).second = [" << (*it).second << "]" << std::endl;
 		// (*it).second = "new year";
+		it = m.find(0);
+		printBool(it == m.end());
 		it = m.find(INT_MAX);
 		printBool(it == m.end());
 	}
@@ -884,8 +923,4 @@ void mapTest() {
 	// Non-member functions
 	nonmember_operatorTest();
 	nonmember_swapTest();
-
-	// value_compareTest();
-	// operator_equalTest();
-	// all_eraseTest();
 }
