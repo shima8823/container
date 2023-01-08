@@ -4,6 +4,8 @@ obj_ft
 obj_stl
 ft_container
 stl_container
+ft_output
+stl_output
 playground
 ft_result.txt
 stl_result.txt
