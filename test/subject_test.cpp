@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 #include <deque>
-#if TEST //CREATE A REAL STL EXAMPLE
+#if ISSTL //CREATE A REAL STL EXAMPLE
 	#include <map>
 	#include <stack>
 	#include <vector>
