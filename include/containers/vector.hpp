@@ -33,9 +33,12 @@ public:
 	// constructor
 
 	vector( ) : _first(NULL), _last(NULL), _reserved_last(NULL), _alloc(allocator_type()) {}
-	vector(const allocator_type &alloc) : _first(NULL), _last(NULL), _reserved_last(NULL), _alloc(alloc) {}
+
+	explicit vector(const allocator_type &alloc) : _first(NULL), _last(NULL), _reserved_last(NULL), _alloc(alloc) {}
+
 	explicit vector(size_type size, const T& value = T(), const Allocator& alloc = Allocator())
-		 : _first(NULL), _last(NULL), _reserved_last(NULL), _alloc(alloc) {resize(size, value);}
+		 : _first(NULL), _last(NULL), _reserved_last(NULL), _alloc(alloc)
+	{resize(size, value);}
 	
 	template <class InputIterator>
 	vector(InputIterator first, InputIterator last, const Allocator &alloc = Allocator(),
@@ -46,8 +49,6 @@ public:
 		for (InputIterator i = first; i != last; ++i)
 			push_back(*i);
 	}
-
-	// copy
 
 	vector(const vector &r) : _first(NULL), _last(NULL), _reserved_last(NULL), _alloc(r._alloc) {
 		reserve(r.size());
@@ -106,47 +107,22 @@ public:
 
 	allocator_type get_allocator() const { return _alloc; }
 
-	// Capacity
-
-	size_type size() const { return end() - begin(); }
-	bool empty() const { return begin() == end(); }
-	size_type capacity() const { return _reserved_last - _first; }
-
-	size_type max_size() const {
-		return std::min<size_type>(_alloc.max_size(),
-				std::numeric_limits<difference_type>::max());
-	}
-
-	// Modifiers
-
-	void push_back(const_reference value) {
-		if (size() + 1 > capacity()) {
-			size_type c = size();
-			if (c == 0)
-				c = 1;
-			else
-				c *= 2;
-			reserve(c);
-		}
-		construct(_last, value);
-		++_last;
-	}
-
 	// Element access
-
-	reference operator[](size_type i) { return _first[i]; }
-	const_reference operator[](size_type i) const { return _first[i]; }
 
 	reference at(size_type i) {
 		if (i >= size())
 			throw std::out_of_range("index is out of range.");
 		return _first[i];
 	}
+
 	const_reference at(size_type i) const {
 		if (i >= size())
 			throw std::out_of_range("index is out of range.");
 		return _first[i];
 	}
+
+	reference operator[](size_type i) { return _first[i]; }
+	const_reference operator[](size_type i) const { return _first[i]; }
 
 	reference front() { return *_first; }
 	const_reference front() const { return *_first; }
@@ -166,12 +142,16 @@ public:
 	reverse_iterator rend() { return reverse_iterator(begin()); }
 	const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
 	const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
-	
-	// Modifiers2
 
-	void clear() { destroy_until(rend()); }
-	
-	// Capacity2
+	// Capacity
+
+	bool empty() const { return begin() == end(); }
+	size_type size() const { return end() - begin(); }
+
+	size_type max_size() const {
+		return std::min<size_type>(_alloc.max_size(),
+				std::numeric_limits<difference_type>::max());
+	}
 
 	void reserve(size_type sz) {
 		if (sz <= capacity())
@@ -197,20 +177,18 @@ public:
 		_alloc.deallocate(old_first, old_capacity);
 	}
 
-	// Modifiers3
+	size_type capacity() const { return _reserved_last - _first; }
 
-	void resize(size_type count, value_type value = T()) {
-		if (count < size())
-			erase(begin() + count, end());
-		else if (count > size())
-			insert(end(), count - size(), value);
-	}
+	// Modifiers
+
+	void clear() { destroy_until(rend()); }
 
 	iterator insert( iterator pos, const T& value ){
 		difference_type offset = pos - begin();
 		insert(pos, 1, value);
 		return begin() + offset;
 	}
+
 	void insert( iterator pos, size_type count, const T& value ) {
 		if (count == 0) return;
 		difference_type	offset = pos - begin();
@@ -229,6 +207,7 @@ public:
 		// new_pos ~ new_pos + count まで valueで詰める。
 		std::fill(new_pos, new_pos + count, value);
 	}
+
 	template< class InputIt >
 	typename ft::enable_if<!ft::is_integral<InputIt>::value, void>::type
 	insert( iterator pos, InputIt first, InputIt last ){
@@ -250,6 +229,7 @@ public:
 	iterator erase( iterator pos ) {
 		return erase(pos, pos + 1);
 	}
+
 	// 42, 21, -21, -42
 	// first = begin() + 1, last = begin() + 2;
 	// 42, -21, -42
@@ -263,7 +243,27 @@ public:
 		return first;
 	}
 
+	void push_back(const_reference value) {
+		if (size() + 1 > capacity()) {
+			size_type c = size();
+			if (c == 0)
+				c = 1;
+			else
+				c *= 2;
+			reserve(c);
+		}
+		construct(_last, value);
+		++_last;
+	}
+
 	void pop_back() {destroy_until(rbegin() + 1);}
+
+	void resize(size_type count, value_type value = T()) {
+		if (count < size())
+			erase(begin() + count, end());
+		else if (count > size())
+			insert(end(), count - size(), value);
+	}
 
 	void swap( vector& other ) {
 		pointer tmp_first = other._first;
@@ -282,16 +282,16 @@ public:
 		this->_alloc = tmp_alloc;
 	}
 
-private:
+protected:
 	pointer _first;
 	pointer _last;
 	pointer _reserved_last;
 	allocator_type _alloc;
 
+private:
 	pointer allocate(size_type n) { return _alloc.allocate(n); }
 	void deallocate() { _alloc.deallocate(_first, capacity()); }
 
-	void construct(pointer ptr) { _alloc.construct(ptr, 0); }
 	void construct(pointer ptr, const_reference value) { _alloc.construct(ptr, value); }
 	void destroy(pointer ptr) { _alloc.destroy(ptr); }
 	void destroy_until(reverse_iterator rend) {
