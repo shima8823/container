@@ -55,7 +55,7 @@ fclean: clean
 	$(RM) $(MY_TEST_NAME_FT) $(MY_TEST_NAME_STL)
 
 # example make bench seed=42
-bench: $(NAME_FT) $(NAME_STL)
+bench: all
 	time ./$(NAME_FT) $(seed)
 	time ./$(NAME_STL) $(seed)
 
