@@ -344,6 +344,13 @@ static void insertTest() {
 		std::cout << "(*res.first).first = [" << (*res.first).second << "]" << std::endl;
 		printBool(res.second);
 		// falseの時
+
+		int_map::iterator it = m2.begin();
+		std::cout << "(*it).first = [" << (*it).first << "]" << std::endl;
+		res = m2.insert(ft::make_pair(INT_MIN, "INT_MIN"));
+		std::cout << "(*it).first = [" << (*it).first << "]" << std::endl;
+		printMap(m2);
+		// invalidate iterator
 	}
 	{
 		printSubTitle("(4)");
@@ -504,7 +511,7 @@ static void eraseTest() {
 		m.erase(m.find(250));
 		printMap(m);
 
-		m.clear(); // 目で確認
+		m.clear();
 		m[500] = "";m[250] = "";m[750] = ""; m[125] = "";m[625] = "";m[375] = "";m[1000] = "";m[800] = "";
 		printMap(m);
 		it = m.find(625);
@@ -548,6 +555,17 @@ static void eraseTest() {
 		printMap(m);
 		m.erase(7);
 		printMap(m);
+
+		int_map::iterator it;
+		m.clear();
+		m[500] = "";m[0] = "";
+		printMap(m);
+		it = m.find(500);
+		m.erase(0);
+		printMap(m);
+		std::cout << "(*it).first = [" << (*it).first << "]" << std::endl;
+		std::cout << "(*it).first = [" << (*it).first << "]" << std::endl;
+		// invalidate iterator
 	}
 }
 
