@@ -645,6 +645,21 @@ static void algorithmTest() {
 	
 }
 
+static void iterator_const_iteratorTest() {
+	printTitle("iterator_const_iterator");
+	{
+		int_vector v;
+		v.push_back(42); v.push_back(5); v.push_back(3);
+		int_vector::iterator it = v.begin();
+		int_vector::const_iterator c_it = v.begin();
+		printBool(it == c_it);
+
+		int_vector::reverse_iterator rit = v.rbegin();
+		int_vector::const_reverse_iterator c_rit = v.rend();
+		printBool(rit == c_rit);
+	}
+}
+
 void vectorTest() {
 	constructorTest();
 	assignTest();
@@ -680,4 +695,7 @@ void vectorTest() {
 
 	// algorithm
 	algorithmTest();
+
+	// iterator_const_iterator
+	iterator_const_iteratorTest();
 }
