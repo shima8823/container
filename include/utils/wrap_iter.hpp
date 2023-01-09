@@ -79,10 +79,22 @@ bool operator!=( const ft::wrap_iter<Iterator1>& lhs,
 	return lhs.base() != rhs.base();
 }
 
+template< class Iterator >
+bool operator<( const ft::wrap_iter<Iterator>& lhs,
+				const ft::wrap_iter<Iterator>& rhs ) {
+	return lhs.base() < rhs.base();
+}
+
 template< class Iterator1, class Iterator2 >
 bool operator<( const ft::wrap_iter<Iterator1>& lhs,
 				const ft::wrap_iter<Iterator2>& rhs ) {
 	return lhs.base() < rhs.base();
+}
+
+template< class Iterator >
+bool operator<=( const ft::wrap_iter<Iterator>& lhs,
+				const ft::wrap_iter<Iterator>& rhs ) {
+	return lhs.base() <= rhs.base();
 }
 
 template< class Iterator1, class Iterator2 >
@@ -91,10 +103,22 @@ bool operator<=( const ft::wrap_iter<Iterator1>& lhs,
 	return lhs.base() <= rhs.base();
 }
 
+template< class Iterator >
+bool operator>( const ft::wrap_iter<Iterator>& lhs,
+				const ft::wrap_iter<Iterator>& rhs ) {
+	return lhs.base() > rhs.base();
+}
+
 template< class Iterator1, class Iterator2 >
 bool operator>( const ft::wrap_iter<Iterator1>& lhs,
 				const ft::wrap_iter<Iterator2>& rhs ) {
 	return lhs.base() > rhs.base();
+}
+
+template< class Iterator >
+bool operator>=( const ft::wrap_iter<Iterator>& lhs,
+				const ft::wrap_iter<Iterator>& rhs ) {
+	return lhs.base() >= rhs.base();
 }
 
 template< class Iterator1, class Iterator2 >
