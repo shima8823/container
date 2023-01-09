@@ -80,7 +80,7 @@ public:
 			size_type sz = size();
 			if (count < sz)
 				destroy_until(rbegin() + (sz - count));
-			std::fill_n(_first, count, value);
+			std::uninitialized_fill_n(_first, count, value);
 		}
 		_last = _first + count;
 	}
